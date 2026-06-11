@@ -172,3 +172,4 @@ supabase/migrations/   → SQL completo (execute no dashboard)
 Foco em confiabilidade, simplicidade e usabilidade em celular.
 
 Qualquer dúvida ou ajuste, o responsável pode entrar em contato.
+# dashboard-TG
