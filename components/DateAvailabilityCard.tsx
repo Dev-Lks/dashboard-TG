@@ -26,7 +26,7 @@ export function DateAvailabilityCard({ date, selected, onSelect }: Props) {
           <div className="mt-0.5 font-semibold text-[var(--olive)]">{date.time_range}</div>
         </div>
         <div className={`badge ${isClosed ? 'badge-closed' : 'badge-open'}`}>
-          {isClosed ? 'Capacidade máxima' : 'Disponível'}
+          {isClosed ? 'Cheia' : 'Disponível'}
         </div>
       </div>
 
@@ -41,9 +41,6 @@ export function DateAvailabilityCard({ date, selected, onSelect }: Props) {
         <div className="mt-2 text-sm font-bold text-[var(--success)]">
           {date.remaining} vagas disponíveis
         </div>
-      )}
-      {isClosed && (
-        <div className="mt-2 text-sm font-bold text-[var(--danger)]">Data em capacidade máxima</div>
       )}
     </button>
   );

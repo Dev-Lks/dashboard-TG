@@ -33,12 +33,7 @@ export function parseExcelDateValue(value: any): string | null {
     const trimmed = value.trim();
     if (!trimmed) return null;
 
-    const direct = new Date(trimmed);
-    if (!isNaN(direct.getTime())) {
-      return direct.toISOString().slice(0, 10);
-    }
-
-    // Brazilian DD/MM/YYYY or DD-MM-YYYY
+    // Brazilian DD/MM/YYYY or DD-MM-YYYY (check before generic Date parse)
     const brMatch = trimmed.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})$/);
     if (brMatch) {
       const day = parseInt(brMatch[1], 10);
@@ -49,6 +44,11 @@ export function parseExcelDateValue(value: any): string | null {
       if (!isNaN(d.getTime())) {
         return d.toISOString().slice(0, 10);
       }
+    }
+
+    const direct = new Date(trimmed);
+    if (!isNaN(direct.getTime())) {
+      return direct.toISOString().slice(0, 10);
     }
   }
 

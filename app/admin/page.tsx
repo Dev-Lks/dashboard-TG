@@ -14,7 +14,6 @@ export default async function AdminDashboard() {
         <div className="mb-5">
           <div className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--olive-dark)]">Área restrita</div>
           <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-[var(--olive-900)]">Acesso ao Painel de Comando</h1>
-          <p className="mt-1 text-sm text-[var(--text-muted)]">Informe a senha de operação administrativa.</p>
         </div>
         <AdminLogin />
       </div>
@@ -56,8 +55,6 @@ export default async function AdminDashboard() {
       <AdminPageHeader
         eyebrow="Painel de comando"
         title="Visão Geral da Operação"
-        description="Acompanhe ocupação, efetivo agendado e status das datas de doação."
-        action={<div className="rounded border border-[var(--border)] bg-[var(--surface)] px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">Dados em tempo real</div>}
       />
 
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -97,7 +94,7 @@ export default async function AdminDashboard() {
             </tbody>
           </table>
           {dateStats.length === 0 ? (
-            <div className="p-4"><EmptyState title="Nenhuma data cadastrada" description="Cadastre datas autorizadas para iniciar a operação de agendamento." /></div>
+            <div className="p-4"><EmptyState title="Nenhuma data cadastrada" description="Cadastre datas em Datas." /></div>
           ) : (
             <div className="grid gap-3 p-3 md:hidden">
               {dateStats.map((d: any) => {
@@ -145,7 +142,7 @@ export default async function AdminDashboard() {
             </tbody>
           </table>
           {!recent?.length ? (
-            <div className="p-4"><EmptyState title="Nenhum agendamento confirmado" description="As últimas confirmações aparecerão aqui." /></div>
+            <div className="p-4"><EmptyState title="Nenhum agendamento confirmado" description="Nenhum agendamento ainda." /></div>
           ) : (
             <div className="grid gap-3 p-3 md:hidden">
               {recent.map((a: any) => (

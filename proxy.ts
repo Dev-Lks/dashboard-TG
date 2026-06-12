@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Only protect deeper admin paths if needed (the /admin page itself handles login UI)
   const isProtected = pathname.startsWith('/admin/') && pathname !== '/admin';
 
   if (isProtected) {

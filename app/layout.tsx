@@ -10,7 +10,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: "TG 11 | Missão Doação de Sangue",
-  description: "Sistema oficial de agendamento de doação de sangue do Tiro de Guerra 11 — Ituiutaba/MG. Apenas Monitores e Atiradores. Capacidade de 15 por data.",
+  description: "Agendamento de doação de sangue — TG 11 Ituiutaba.",
   icons: {
     icon: "/favicon.ico",
   },

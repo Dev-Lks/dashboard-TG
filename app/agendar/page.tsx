@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowLeft, CheckCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import type { Volunteer, AvailableDate, AvailableSlot } from '@/lib/types';
 import { toast } from 'sonner';
 import { VolunteerSearch } from '@/components/VolunteerSearch';
@@ -128,7 +128,7 @@ export default function AgendarPage() {
         time: json.appointment.time_slot,
       });
       setStep('success');
-      toast.success('Agendamento confirmado. Missão registrada com sucesso.');
+      toast.success('Agendamento confirmado.');
     } catch (err: any) {
       toast.error(err.message || 'Erro ao agendar. Tente novamente.');
     } finally {
@@ -147,7 +147,6 @@ export default function AgendarPage() {
           <div className="mission-panel rounded-lg px-5 py-6 sm:px-7">
             <div className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--sand)]">Missão: Doação de Sangue</div>
             <h1 className="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">Registrar agendamento</h1>
-            <p className="mt-2 text-sm leading-6 text-[var(--text-inverse)]/82">Identifique-se, confirme seus dados e escolha uma data disponível. Capacidade máxima: 15 voluntários por data.</p>
           </div>
         </div>
 
@@ -167,9 +166,6 @@ export default function AgendarPage() {
                 style={{ width: `${((currentIndex + 1) / steps.length) * 100}%` }}
               />
             </div>
-            <p className="mt-2 text-sm font-bold text-[var(--olive-dark)]" aria-current="step">
-              Passo {currentIndex + 1} de {steps.length} — {steps[currentIndex]?.label}
-            </p>
           </div>
 
           {/* Desktop: full stepper with labels */}
@@ -188,7 +184,7 @@ export default function AgendarPage() {
         {isLoading && step !== 'search' && (
           <div className="mb-4 flex items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm font-semibold text-[var(--text-muted)]">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Atualizando informações da operação...
+            Carregando...
           </div>
         )}
 
@@ -197,7 +193,6 @@ export default function AgendarPage() {
             <div className="mb-4">
               <div className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--olive-dark)]">1. Identificação</div>
               <h2 className="mt-1 text-xl font-extrabold text-[var(--olive-900)]">Encontre seu cadastro</h2>
-              <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">Busca permitida por NR, nome de guerra ou nome completo.</p>
             </div>
             <VolunteerSearch onSelect={handleVolunteerSelect} isLoading={isLoading} setIsLoading={setIsLoading} />
           </div>
@@ -235,7 +230,7 @@ export default function AgendarPage() {
               <div className="mb-3 flex items-center justify-between gap-3 px-1">
                 <div>
                   <div className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--olive-dark)]">4. Horário</div>
-                  <h2 className="text-xl font-extrabold text-[var(--olive-900)]">Selecione a janela de apresentação</h2>
+                  <h2 className="text-xl font-extrabold text-[var(--olive-900)]">Escolha o horário</h2>
                 </div>
                 <button onClick={backToDates} className="text-sm font-bold text-[var(--olive)] hover:underline">Trocar data</button>
               </div>
@@ -243,10 +238,6 @@ export default function AgendarPage() {
             </div>
 
             <div className="card p-5">
-              <div className="mb-4 flex items-center gap-2 text-sm font-extrabold uppercase tracking-[0.12em] text-[var(--olive-dark)]">
-                <CheckCircle className="h-4 w-4" />
-                Confirmação final
-              </div>
               <div className="mb-5 grid gap-2 text-sm">
                 <div><span className="info-label">Voluntário</span><div className="font-bold">{volunteer?.war_name || volunteer?.full_name}</div></div>
                 <div><span className="info-label">Data</span><div className="font-bold">{selectedDate.day_name}, {formatDateBR(selectedDate.date)}</div></div>

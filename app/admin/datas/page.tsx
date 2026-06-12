@@ -28,7 +28,6 @@ export default async function AdminDatesPage() {
       <AdminPageHeader
         eyebrow="Gerenciamento de datas"
         title="Calendário da Missão"
-        description="Cadastre e acompanhe as datas operacionais da missão de doação. Selecione segundas ou quintas no calendário."
       />
 
       <DatesPageClient registeredDates={dates} />

@@ -21,18 +21,14 @@ export function SuccessCard({ nr, warName, fullName, date, dayName, time }: Succ
       <div className="bg-[var(--surface-dark)] p-6 text-center text-[var(--text-inverse)]">
         <CheckCircle className="mx-auto h-12 w-12 mb-3" />
         <div className="text-2xl font-extrabold tracking-tight">Missão registrada</div>
-        <div className="mt-1 text-sm font-medium text-[var(--sand)]">Agendamento confirmado com sucesso.</div>
       </div>
 
       <div className="p-6 space-y-6">
-        <div>
-          <div className="text-xs font-extrabold uppercase tracking-widest text-[var(--olive-dark)]">Dados do agendamento</div>
-          <div className="mt-3 grid gap-y-3 text-sm">
+        <div className="grid gap-y-3 text-sm">
             <div><span className="text-[var(--text-muted)]">NR:</span> <span className="font-mono font-semibold">{nr}</span></div>
             <div><span className="text-[var(--text-muted)]">Nome de Guerra:</span> <span className="font-semibold">{warName || fullName}</span></div>
             <div><span className="text-[var(--text-muted)]">Nome completo:</span> <span>{fullName}</span></div>
           </div>
-        </div>
 
         <div className="border-t pt-5">
           <div className="flex gap-3">

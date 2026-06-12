@@ -46,7 +46,6 @@ export default async function AdminAppointmentsPage({
         <AdminPageHeader
           eyebrow="Doação de sangue"
           title="Quem vai doar?"
-          description="Escolha a data abaixo e veja a lista de Monitores e Atiradores confirmados."
           action={<ExportButton />}
         />
         <AppointmentsSimplePage

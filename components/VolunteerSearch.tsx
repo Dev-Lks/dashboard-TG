@@ -61,7 +61,6 @@ export function VolunteerSearch({ onSelect, isLoading, setIsLoading }: Props) {
         <div className="mt-4">
           {results.length > 0 ? (
             <div className="space-y-2">
-              <p className="px-1 text-sm font-medium text-[var(--text-muted)]">Voluntário identificado. Selecione o cadastro correto:</p>
               {results.map((v) => (
                 <button
                   key={v.id}
@@ -84,9 +83,7 @@ export function VolunteerSearch({ onSelect, isLoading, setIsLoading }: Props) {
             </div>
           ) : (
             <div className="rounded-md border border-dashed border-[var(--border-strong)] bg-[var(--surface-raised)] p-8 text-center text-sm text-[var(--text-muted)]">
-              Nenhum voluntário encontrado com esses termos.
-              <br />
-              Verifique o NR, nome de guerra ou nome completo e tente novamente.
+              Nenhum voluntário encontrado.
             </div>
           )}
         </div>
