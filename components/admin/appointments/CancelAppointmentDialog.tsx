@@ -39,7 +39,7 @@ export function CancelAppointmentDialog({ appointment, open, onClose, onSuccess 
       onClose={onClose}
       onConfirm={handleConfirm}
       title="Cancelar agendamento"
-      description={`Confirma o cancelamento do agendamento de ${name}? A vaga será liberada para novos agendamentos.`}
+      description={`Confirma o cancelamento do agendamento de ${name}?`}
       confirmLabel="Confirmar cancelamento"
       variant="danger"
       loading={pending}

@@ -48,7 +48,7 @@ export function MissionDateDetailPanel({
       <div className="card p-5">
         <div className="text-sm font-extrabold text-[var(--warning)]">Este dia não gera horários automaticamente</div>
         <p className="mt-2 text-sm text-[var(--text-muted)]">
-          Apenas segundas-feiras (07:00–10:00) e quintas-feiras (13:00–17:00) podem ser cadastradas.
+          Apenas segundas e quintas podem ser cadastradas.
         </p>
       </div>
     );
@@ -146,7 +146,7 @@ export function MissionDateDetailPanel({
             />
           )}
 
-          <FormField label="Capacidade" hint="Limite operacional: 15 por data">
+          <FormField label="Capacidade">
             <input
               type="number"
               value={capacity}

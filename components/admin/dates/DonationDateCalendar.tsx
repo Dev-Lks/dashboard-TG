@@ -56,9 +56,6 @@ export function DonationDateCalendar({
         <div className="text-xs font-extrabold uppercase tracking-[0.16em] text-[var(--olive-dark)]">
           Calendário da Missão
         </div>
-        <p className="mt-1 text-sm text-[var(--text-muted)]">
-          Toque em segundas/quintas para selecionar múltiplas datas. Toque em data cadastrada para editar.
-        </p>
       </div>
 
       <div className="p-4">

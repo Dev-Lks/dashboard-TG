@@ -171,7 +171,7 @@ export function AppointmentsSimplePage({
       <div className="card p-6">
         <EmptyState
           title="Nenhuma data ativa"
-          description="Cadastre datas da missão em Datas antes de ver os agendamentos."
+          description="Cadastre datas em Datas."
         />
       </div>
     );

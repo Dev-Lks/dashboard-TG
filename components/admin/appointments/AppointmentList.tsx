@@ -42,7 +42,7 @@ export function AppointmentList({ appointments, availableDates }: AppointmentLis
   if (appointments.length === 0) {
     return (
       <div className="card p-4">
-        <EmptyState title="Nenhum agendamento encontrado" description="Ajuste os filtros ou aguarde novas confirmações." />
+        <EmptyState title="Nenhum agendamento encontrado" />
       </div>
     );
   }

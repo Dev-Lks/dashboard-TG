@@ -27,13 +27,7 @@ export default async function AdminVolunteersPage({ searchParams }: { searchPara
       <AdminPageHeader
         eyebrow="Efetivo"
         title="Voluntários / Atiradores"
-        description="Consulta em modo somente leitura. A lista é versionada no projeto e atualizada via seed."
-        action={<div className="rounded border border-[var(--border)] bg-[var(--surface)] px-3 py-2 font-mono text-[10px] font-bold text-[var(--text-muted)]">data/volunteers.csv</div>}
       />
-
-      <div className="mb-4 rounded-md border border-[var(--sand)] bg-[var(--sand-light)] px-4 py-3 text-xs font-semibold leading-5 text-[var(--olive-900)]">
-        Para atualizar a lista, altere o CSV versionado e execute <span className="font-mono">pnpm seed:volunteers</span>. Não há importação manual pelo painel.
-      </div>
 
       <div>
         <div className="mb-3 flex flex-col gap-3 px-1 sm:flex-row sm:items-center sm:justify-between">
@@ -73,7 +67,7 @@ export default async function AdminVolunteersPage({ searchParams }: { searchPara
           </table>
           {volunteers.length === 0 ? (
             <div className="p-4">
-              <EmptyState title="Nenhum voluntário encontrado" description="Ajuste a busca por NR, nome de guerra ou nome completo." />
+              <EmptyState title="Nenhum voluntário encontrado" />
             </div>
           ) : (
             <div className="grid gap-3 p-3 md:hidden">
@@ -107,7 +101,6 @@ export default async function AdminVolunteersPage({ searchParams }: { searchPara
             </div>
           )}
         </div>
-        <p className="mt-2 px-1 text-[11px] font-medium text-[var(--text-muted)]">Exibindo efetivo. Use a busca para filtrar.</p>
       </div>
     </div>
   );

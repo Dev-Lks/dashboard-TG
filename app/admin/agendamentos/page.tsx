@@ -67,7 +67,6 @@ export default async function AdminAppointmentsPage({
       <AdminPageHeader
         eyebrow="Doação de sangue"
         title="Agendamentos cancelados"
-        description="Lista de voluntários que cancelaram o agendamento."
         action={
           <a href="/admin/agendamentos" className="btn btn-secondary">
             Voltar à lista principal

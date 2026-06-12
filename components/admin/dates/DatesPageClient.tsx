@@ -78,9 +78,6 @@ export function DatesPageClient({ registeredDates }: DatesPageClientProps) {
       </section>
 
       <section className="mb-5">
-        <div className="mb-3 px-1 text-sm font-extrabold uppercase tracking-[0.12em] text-[var(--olive-900)]">
-          Janelas operacionais
-        </div>
         <ScheduleWindowCards />
       </section>
     </>

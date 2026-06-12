@@ -20,9 +20,6 @@ export function MissionDateList({ dates }: MissionDateListProps) {
         <div className="text-xs font-extrabold uppercase tracking-[0.16em] text-[var(--olive-dark)]">
           Datas cadastradas
         </div>
-        <p className="mt-1 text-sm text-[var(--text-muted)]">
-          Controle de status, capacidade e ocupação da missão.
-        </p>
       </div>
 
       <table className="table hidden w-full md:table">
@@ -64,7 +61,7 @@ export function MissionDateList({ dates }: MissionDateListProps) {
 
       {dates.length === 0 ? (
         <div className="p-4">
-          <EmptyState title="Nenhuma data cadastrada" description="Selecione uma segunda ou quinta no calendário para iniciar a missão." />
+          <EmptyState title="Nenhuma data cadastrada" description="Selecione uma data no calendário." />
         </div>
       ) : (
         <div className="grid gap-3 p-3 md:hidden">

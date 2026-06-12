@@ -42,7 +42,6 @@ export function AdminLogin() {
       >
         {loading ? 'Verificando...' : 'Entrar no painel'}
       </button>
-      <p className="text-center text-[11px] font-medium text-[var(--text-muted)]">Sessão expira automaticamente após 8 horas.</p>
     </form>
   );
 }

@@ -29,7 +29,7 @@ export function AppointmentFilters({ params, dateOptions }: AppointmentFiltersPr
       >
         <span className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[var(--olive-dark)]">
           <Filter className="h-4 w-4" />
-          Filtros da operação
+          Filtros
         </span>
         <ChevronDown className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>

@@ -41,7 +41,7 @@ export function AppointmentDetailsPanel({ appointment, open, onClose }: Appointm
             <div className="font-mono text-xs">{v?.phone || '—'}</div>
           </div>
           <div>
-            <div className="info-label">Data da missão</div>
+            <div className="info-label">Data</div>
             <div className="font-bold">{formatDateBR(appointment.donation_dates?.date || '')}</div>
           </div>
           <div>

@@ -91,7 +91,7 @@ export function MissionBatchPanel({ selectedDates, onRemoveDate, onClear }: Miss
           })}
         </div>
 
-        <FormField label="Capacidade (todas as datas)" hint="Limite operacional: 15 por data">
+        <FormField label="Capacidade (todas as datas)">
           <input
             type="number"
             value={capacity}
@@ -113,7 +113,7 @@ export function MissionBatchPanel({ selectedDates, onRemoveDate, onClear }: Miss
         </FormField>
 
         <button type="button" onClick={handleBatchCreate} disabled={pending} className="btn btn-primary w-full">
-          {pending ? 'Cadastrando...' : `Cadastrar ${selectedDates.length} data(s) da missão`}
+          {pending ? 'Cadastrando...' : `Cadastrar ${selectedDates.length} data(s)`}
         </button>
       </div>
     </div>

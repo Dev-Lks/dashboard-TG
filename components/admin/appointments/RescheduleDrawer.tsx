@@ -90,7 +90,7 @@ export function RescheduleDrawer({ appointment, availableDates, open, onClose, o
         </div>
 
         <div>
-          <div className="info-label mb-2">Nova data da missão</div>
+          <div className="info-label mb-2">Nova data</div>
           <div className="grid gap-2">
             {selectableDates.length === 0 ? (
               <p className="text-sm text-[var(--text-muted)]">Nenhuma data disponível para reagendamento.</p>
@@ -134,7 +134,7 @@ export function RescheduleDrawer({ appointment, availableDates, open, onClose, o
           </div>
         )}
 
-        <FormField label="Observação (opcional)" hint="Será registrada no histórico administrativo">
+        <FormField label="Observação (opcional)">
           <textarea
             value={adminNote}
             onChange={(e) => setAdminNote(e.target.value)}
