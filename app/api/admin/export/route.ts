@@ -4,10 +4,13 @@ import { isAdminAuthenticated } from '@/lib/admin-auth';
 import {
   buildDateOnlyWorkbook,
   buildFullTgWorkbook,
+  buildTurmaDateWorkbook,
+  buildTurmaWorkbook,
   type ExportAppointment,
   type ExportVolunteer,
 } from '@/lib/export/tg-spreadsheet';
 import { normalizeRole } from '@/lib/volunteers/roles';
+import { TURMAS, type TurmaId } from '@/lib/volunteers/turmas';
 
 type VolunteerRecord = ExportVolunteer & { id?: string };
 
@@ -24,6 +27,10 @@ function mapVolunteer(v: VolunteerRecord | null): ExportVolunteer | null {
   };
 }
 
+function isTurmaId(value: string | null): value is TurmaId {
+  return value === 't1' || value === 't2' || value === 't3';
+}
+
 export async function GET(request: NextRequest) {
   const isAuthed = await isAdminAuthenticated();
   if (!isAuthed) {
@@ -34,6 +41,7 @@ export async function GET(request: NextRequest) {
   }
 
   const dateFilter = request.nextUrl.searchParams.get('date') || undefined;
+  const turmaFilter = request.nextUrl.searchParams.get('turma');
   const supabase = createServiceRoleClient();
 
   const { data: volunteersRaw } = await supabase
@@ -85,8 +93,24 @@ export async function GET(request: NextRequest) {
   });
 
   let wb;
-  if (dateFilter) {
+  let filename: string;
+
+  if (turmaFilter) {
+    if (!isTurmaId(turmaFilter)) {
+      return NextResponse.json({ error: 'Turma inválida' }, { status: 400 });
+    }
+    const turma = TURMAS.find((t) => t.id === turmaFilter)!;
+
+    if (dateFilter) {
+      wb = buildTurmaDateWorkbook(turmaFilter, dateFilter, appointments);
+      filename = `TG11-${turma.label}-${turma.name}-${dateFilter}.xlsx`;
+    } else {
+      wb = buildTurmaWorkbook(turmaFilter, volunteers);
+      filename = `TG11-${turma.label}-${turma.name}-efetivo.xlsx`;
+    }
+  } else if (dateFilter) {
     wb = buildDateOnlyWorkbook(dateFilter, appointments);
+    filename = `TG11-doacao-${dateFilter}.xlsx`;
   } else {
     const { data: dates } = await supabase
       .from('donation_dates')
@@ -94,12 +118,10 @@ export async function GET(request: NextRequest) {
       .order('date', { ascending: true });
 
     wb = buildFullTgWorkbook(volunteers, appointments, dates || []);
+    filename = `TG 11-002 DOAÇÃO DE SANGUE-${new Date().toISOString().slice(0, 10)}.xlsx`;
   }
 
   const buffer = await wb.xlsx.writeBuffer();
-  const filename = dateFilter
-    ? `TG11-doacao-${dateFilter}.xlsx`
-    : `TG 11-002 DOAÇÃO DE SANGUE-${new Date().toISOString().slice(0, 10)}.xlsx`;
 
   return new NextResponse(buffer, {
     headers: {

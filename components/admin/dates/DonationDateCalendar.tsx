@@ -17,7 +17,7 @@ type DonationDateCalendarProps = {
   registeredDates: RegisteredDateInfo[];
   selectedDateStrs?: Set<string>;
   focusDateStr?: string | null;
-  onDateClick: (dateStr: string, isRegistered: boolean, isValidNew: boolean) => void;
+  onDateClick: (dateStr: string, isRegistered: boolean) => void;
 };
 
 export function DonationDateCalendar({
@@ -41,8 +41,7 @@ export function DonationDateCalendar({
 
   const stateClass: Record<string, string> = {
     invalid: 'calendar-day--invalid',
-    'valid-mon': 'calendar-day--valid-mon',
-    'valid-thu': 'calendar-day--valid-thu',
+    valid: 'calendar-day--valid',
     registered: 'calendar-day--registered',
     'registered-full': 'calendar-day--full',
     'registered-inactive': 'calendar-day--inactive',
@@ -92,8 +91,7 @@ export function DonationDateCalendar({
         <div className="calendar-grid max-[400px]:gap-0.5">
           {days.map((day) => {
             const isRegistered = !!day.registered;
-            const isValidNew = day.state === 'valid-mon' || day.state === 'valid-thu';
-            const isSelectable = isRegistered || isValidNew;
+            const isSelectable = isRegistered || (day.inMonth && day.state === 'valid');
 
             return (
               <button
@@ -101,7 +99,7 @@ export function DonationDateCalendar({
                 type="button"
                 disabled={!isSelectable || !day.inMonth}
                 onClick={() =>
-                  day.inMonth && isSelectable && onDateClick(day.dateStr, isRegistered, isValidNew)
+                  day.inMonth && isSelectable && onDateClick(day.dateStr, isRegistered)
                 }
                 className={[
                   'calendar-day max-[400px]:min-h-10 max-[400px]:text-[13px]',
@@ -126,11 +124,11 @@ export function DonationDateCalendar({
           })}
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
-          <span className="flex items-center gap-1"><span className="calendar-legend calendar-legend--mon" /> Seg válida</span>
-          <span className="flex items-center gap-1"><span className="calendar-legend calendar-legend--thu" /> Qui válida</span>
+        <div className="mt-4 flex flex-wrap gap-3 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+          <span className="flex items-center gap-1"><span className="calendar-legend calendar-legend--valid" /> Disponível</span>
           <span className="flex items-center gap-1"><span className="calendar-legend calendar-legend--registered" /> Cadastrada</span>
           <span className="flex items-center gap-1"><span className="calendar-legend calendar-legend--full" /> Cheia</span>
+          <span className="flex items-center gap-1"><span className="calendar-legend calendar-legend--selected" /> Selecionada</span>
         </div>
       </div>
     </div>

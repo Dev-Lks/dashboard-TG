@@ -25,19 +25,17 @@ export function DonationSchedulePreview({ times }: DonationSchedulePreviewProps)
 
 export function ScheduleWindowCards() {
   return (
-    <div className="grid gap-3 md:grid-cols-2">
-      <div className="card p-4">
-        <div className="text-xs font-extrabold uppercase tracking-[0.14em] text-[var(--olive-dark)]">Segunda-feira</div>
-        <div className="mt-2 font-mono text-sm font-bold text-[var(--olive)]">
-          {donationProfiles.monday.timeRange}
+    <div className="grid gap-3 sm:grid-cols-3">
+      {(['monday', 'thursday', 'generic'] as const).map((key) => (
+        <div key={key} className="card p-4">
+          <div className="text-xs font-extrabold uppercase tracking-[0.14em] text-[var(--olive-dark)]">
+            {donationProfiles[key].profileLabel}
+          </div>
+          <div className="mt-2 font-mono text-sm font-bold text-[var(--olive)]">
+            {donationProfiles[key].timeRange}
+          </div>
         </div>
-      </div>
-      <div className="card p-4">
-        <div className="text-xs font-extrabold uppercase tracking-[0.14em] text-[var(--olive-dark)]">Quinta-feira</div>
-        <div className="mt-2 font-mono text-sm font-bold text-[var(--olive)]">
-          {donationProfiles.thursday.timeRange}
-        </div>
-      </div>
+      ))}
     </div>
   );
 }

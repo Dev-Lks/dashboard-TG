@@ -6,14 +6,18 @@ import type { DateRoster } from '@/lib/appointments/queries';
 import { formatDateBR } from '@/lib/date-utils';
 import { getDonationDayInfo } from '@/lib/dates/profiles';
 import { downloadSpreadsheetWithToast } from '@/lib/export/download-spreadsheet';
+import { TURMAS, type TurmaId } from '@/lib/volunteers/turmas';
 
 type ExportPanelProps = {
   rosters: DateRoster[];
+  showTurma?: boolean;
 };
 
-export function ExportPanel({ rosters }: ExportPanelProps) {
+export function ExportPanel({ rosters, showTurma = true }: ExportPanelProps) {
   const [loadingFull, setLoadingFull] = useState(false);
   const [loadingDate, setLoadingDate] = useState<string | null>(null);
+  const [loadingTurma, setLoadingTurma] = useState<TurmaId | null>(null);
+  const [loadingTurmaDate, setLoadingTurmaDate] = useState<string | null>(null);
 
   async function handleFullExport() {
     setLoadingFull(true);
@@ -33,11 +37,29 @@ export function ExportPanel({ rosters }: ExportPanelProps) {
     }
   }
 
+  async function handleTurmaExport(turmaId: TurmaId) {
+    setLoadingTurma(turmaId);
+    try {
+      await downloadSpreadsheetWithToast({ turma: turmaId });
+    } finally {
+      setLoadingTurma(null);
+    }
+  }
+
+  async function handleTurmaDateExport(turmaId: TurmaId, date: string) {
+    setLoadingTurmaDate(`${turmaId}:${date}`);
+    try {
+      await downloadSpreadsheetWithToast({ turma: turmaId, date });
+    } finally {
+      setLoadingTurmaDate(null);
+    }
+  }
+
   return (
     <div className="card admin-export-panel">
       <div className="admin-export-panel-head">
         <h2 className="admin-export-panel-title">Exportar planilhas</h2>
-        <p className="admin-export-panel-sub">Arquivos Excel (.xlsx) prontos para uso</p>
+        <p className="admin-export-panel-sub">Excel (.xlsx) por data, turma ou completo</p>
       </div>
 
       <button
@@ -50,6 +72,31 @@ export function ExportPanel({ rosters }: ExportPanelProps) {
         {loadingFull ? 'Baixando...' : 'Baixar planilha completa'}
       </button>
 
+      {showTurma && (
+        <div className="admin-export-dates">
+          <h3 className="admin-export-dates-title">Por turma (efetivo)</h3>
+          <div className="admin-export-dates-list">
+            {TURMAS.map((t) => (
+              <div key={t.id} className="admin-export-date-row">
+                <div className="admin-export-date-info">
+                  <div className="admin-export-date-label">{t.label} — {t.name}</div>
+                  <div className="admin-export-date-meta">SEQ {t.min}–{t.max}</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleTurmaExport(t.id)}
+                  disabled={loadingTurma === t.id}
+                  className="btn btn-secondary btn-block admin-export-date-btn"
+                >
+                  <Download className="h-4 w-4" aria-hidden="true" />
+                  {loadingTurma === t.id ? 'Baixando...' : 'Baixar'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {rosters.length > 0 && (
         <div className="admin-export-dates">
           <h3 className="admin-export-dates-title">Por data</h3>
@@ -61,7 +108,7 @@ export function ExportPanel({ rosters }: ExportPanelProps) {
                 <div key={r.id} className="admin-export-date-row">
                   <div className="admin-export-date-info">
                     <div className="admin-export-date-label">
-                      {formatDateBR(r.date)} • {info.shortLabel} • {info.timeRange}
+                      {formatDateBR(r.date)} • {info.shortLabel}
                     </div>
                     <div className="admin-export-date-meta">
                       {r.booked} confirmado{r.booked !== 1 ? 's' : ''}
@@ -77,6 +124,24 @@ export function ExportPanel({ rosters }: ExportPanelProps) {
                     <Download className="h-4 w-4" aria-hidden="true" />
                     {isLoading ? 'Baixando...' : 'Baixar'}
                   </button>
+                  {showTurma && (
+                    <div className="col-span-full grid grid-cols-3 gap-2 pt-1">
+                      {TURMAS.map((t) => {
+                        const key = `${t.id}:${r.date}`;
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => handleTurmaDateExport(t.id, r.date)}
+                            disabled={loadingTurmaDate === key}
+                            className="btn btn-outline btn-sm text-xs"
+                          >
+                            {loadingTurmaDate === key ? '...' : t.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               );
             })}

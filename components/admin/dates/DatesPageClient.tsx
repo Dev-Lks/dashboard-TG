@@ -24,18 +24,16 @@ export function DatesPageClient({ registeredDates }: DatesPageClientProps) {
   const registered = focusDateStr ? registeredMap.get(focusDateStr) : undefined;
 
   const handleDateClick = useCallback(
-    (dateStr: string, isRegistered: boolean, isValidNew: boolean) => {
+    (dateStr: string, isRegistered: boolean) => {
       if (isRegistered) {
         setFocusDateStr(dateStr);
         return;
       }
 
-      if (isValidNew) {
-        setFocusDateStr(null);
-        setSelectedForBatch((prev) =>
-          prev.includes(dateStr) ? prev.filter((d) => d !== dateStr) : [...prev, dateStr]
-        );
-      }
+      setFocusDateStr(dateStr);
+      setSelectedForBatch((prev) =>
+        prev.includes(dateStr) ? prev.filter((d) => d !== dateStr) : [...prev, dateStr]
+      );
     },
     []
   );

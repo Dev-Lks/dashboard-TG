@@ -1,9 +1,8 @@
 'use server';
 
 import { requireAdmin } from '@/lib/admin-auth';
-import { donationProfiles, getDonationProfileKey } from '@/lib/dates/profiles';
+import { donationProfiles, isDonationProfileKey } from '@/lib/dates/profiles';
 import { createServiceRoleClient } from '@/lib/supabase/server';
-import { getDay, parseISO } from 'date-fns';
 import { revalidatePath } from 'next/cache';
 
 export type DateActionResult = {
@@ -15,23 +14,17 @@ export async function createDateAction(formData: FormData): Promise<DateActionRe
   await requireAdmin();
 
   const dateStr = formData.get('date') as string;
+  const profileKeyRaw = formData.get('profileKey') as string;
   const requestedCapacity = parseInt(formData.get('capacity') as string) || 15;
   const capacity = Math.max(1, Math.min(15, requestedCapacity));
   const notes = (formData.get('notes') as string) || null;
 
   if (!dateStr) return { success: false, error: 'Data é obrigatória' };
-
-  const profileKey = getDonationProfileKey(dateStr);
-  if (!profileKey) {
-    return { success: false, error: 'Este dia não gera horários automaticamente. Selecione uma segunda ou quinta.' };
+  if (!isDonationProfileKey(profileKeyRaw)) {
+    return { success: false, error: 'Perfil de horário inválido' };
   }
 
-  const profile = donationProfiles[profileKey];
-  const dow = getDay(parseISO(dateStr));
-  if (dow !== profile.dayIndex) {
-    return { success: false, error: `Data não corresponde ao perfil ${profile.shortLabel}` };
-  }
-
+  const profile = donationProfiles[profileKeyRaw];
   const supabase = createServiceRoleClient();
 
   const { data: existing } = await supabase
@@ -59,6 +52,7 @@ export async function createDateAction(formData: FormData): Promise<DateActionRe
 
   revalidatePath('/admin/datas');
   revalidatePath('/admin');
+  revalidatePath('/');
   return { success: true };
 }
 
@@ -72,6 +66,7 @@ export async function createDatesBatchAction(
   dates: string[],
   capacity = 15,
   notes: string | null = null,
+  profileKey: string = 'generic',
 ): Promise<BatchCreateResult> {
   await requireAdmin();
 
@@ -79,6 +74,11 @@ export async function createDatesBatchAction(
     return { success: false, error: 'Selecione ao menos uma data' };
   }
 
+  if (!isDonationProfileKey(profileKey)) {
+    return { success: false, error: 'Perfil de horário inválido' };
+  }
+
+  const profile = donationProfiles[profileKey];
   const cappedCapacity = Math.max(1, Math.min(15, capacity));
   const supabase = createServiceRoleClient();
   let created = 0;
@@ -86,21 +86,6 @@ export async function createDatesBatchAction(
   const errors: string[] = [];
 
   for (const dateStr of dates) {
-    const profileKey = getDonationProfileKey(dateStr);
-    if (!profileKey) {
-      skipped++;
-      errors.push(`${dateStr}: dia inválido`);
-      continue;
-    }
-
-    const profile = donationProfiles[profileKey];
-    const dow = getDay(parseISO(dateStr));
-    if (dow !== profile.dayIndex) {
-      skipped++;
-      errors.push(`${dateStr}: não corresponde ao perfil ${profile.shortLabel}`);
-      continue;
-    }
-
     const { data: existing } = await supabase
       .from('donation_dates')
       .select('id')
@@ -131,11 +116,12 @@ export async function createDatesBatchAction(
 
   revalidatePath('/admin/datas');
   revalidatePath('/admin');
+  revalidatePath('/');
 
   if (created === 0) {
     return {
       success: false,
-      error: 'Nenhuma data foi cadastrada. Verifique se já existem ou são inválidas.',
+      error: 'Nenhuma data foi cadastrada. Verifique se já existem.',
       created,
       skipped,
       errors,
@@ -165,6 +151,7 @@ export async function updateDateAction(formData: FormData): Promise<DateActionRe
 
   revalidatePath('/admin/datas');
   revalidatePath('/admin');
+  revalidatePath('/');
   return { success: true };
 }
 
@@ -175,6 +162,7 @@ export async function toggleActiveAction(id: string, current: boolean): Promise<
   if (error) return { success: false, error: 'Erro ao alterar status' };
   revalidatePath('/admin/datas');
   revalidatePath('/admin');
+  revalidatePath('/');
   return { success: true };
 }
 
@@ -195,5 +183,6 @@ export async function deleteDateAction(id: string): Promise<DateActionResult> {
 
   revalidatePath('/admin/datas');
   revalidatePath('/admin');
+  revalidatePath('/');
   return { success: true };
 }

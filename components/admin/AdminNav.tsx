@@ -28,8 +28,8 @@ export function AdminNav() {
             href={item.href}
             className={`flex min-h-10 shrink-0 items-center gap-2 rounded px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] transition-colors ${
               isActive
-                ? 'bg-white/10 text-white'
-                : 'text-[var(--sand)] hover:bg-white/5 hover:text-white'
+                ? 'bg-[var(--surface-muted)] text-[var(--olive-900)]'
+                : 'text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]'
             }`}
             aria-current={isActive ? 'page' : undefined}
           >

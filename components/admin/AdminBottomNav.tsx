@@ -16,7 +16,7 @@ export function AdminBottomNav() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-50 grid grid-cols-4 border-t-2 border-[var(--olive)] bg-[rgba(31,41,37,0.97)] backdrop-blur-sm pb-[env(safe-area-inset-bottom,0px)] md:hidden"
+      className="admin-bottom-nav fixed inset-x-0 bottom-0 z-50 grid grid-cols-4 border-t border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur-sm pb-[env(safe-area-inset-bottom,0px)] md:hidden"
       aria-label="Navegação administrativa"
     >
       {navItems.map((item) => {
@@ -31,8 +31,8 @@ export function AdminBottomNav() {
             href={item.href}
             className={`flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 py-1.5 text-[10px] font-bold uppercase tracking-wide transition-colors ${
               isActive
-                ? 'bg-white/10 text-white'
-                : 'text-[var(--sand)] hover:bg-white/5 hover:text-white'
+                ? 'bg-[var(--surface-muted)] text-[var(--olive-900)]'
+                : 'text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]'
             }`}
             aria-current={isActive ? 'page' : undefined}
           >

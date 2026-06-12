@@ -5,8 +5,9 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { X } from 'lucide-react';
 import { FormField } from '@/components/shared/FormField';
+import { ProfileSelect } from './ProfileSelect';
 import { createDatesBatchAction } from '@/app/admin/datas/actions';
-import { getDonationDayInfo } from '@/lib/dates/profiles';
+import { getDonationDayInfo, getSuggestedProfileKey, type DonationProfileKey } from '@/lib/dates/profiles';
 import { formatDateBR } from '@/lib/date-utils';
 
 type MissionBatchPanelProps = {
@@ -20,6 +21,9 @@ export function MissionBatchPanel({ selectedDates, onRemoveDate, onClear }: Miss
   const [pending, startTransition] = useTransition();
   const [capacity, setCapacity] = useState(15);
   const [notes, setNotes] = useState('');
+  const [profileKey, setProfileKey] = useState<DonationProfileKey>(() =>
+    selectedDates.length > 0 ? getSuggestedProfileKey(selectedDates[0]) : 'generic'
+  );
 
   if (selectedDates.length === 0) return null;
 
@@ -27,7 +31,7 @@ export function MissionBatchPanel({ selectedDates, onRemoveDate, onClear }: Miss
 
   const handleBatchCreate = () => {
     startTransition(async () => {
-      const result = await createDatesBatchAction(sorted, capacity, notes || null);
+      const result = await createDatesBatchAction(sorted, capacity, notes || null, profileKey);
       if (result.success) {
         const msg =
           result.skipped && result.skipped > 0
@@ -52,7 +56,7 @@ export function MissionBatchPanel({ selectedDates, onRemoveDate, onClear }: Miss
               Cadastro em lote
             </div>
             <p className="mt-1 text-sm text-[var(--text-muted)]">
-              {selectedDates.length} data(s) selecionada(s) para cadastro
+              {selectedDates.length} data(s) selecionada(s)
             </p>
           </div>
           <button
@@ -60,7 +64,7 @@ export function MissionBatchPanel({ selectedDates, onRemoveDate, onClear }: Miss
             onClick={onClear}
             className="text-xs font-bold text-[var(--text-muted)] hover:text-[var(--danger)]"
           >
-            Limpar seleção
+            Limpar
           </button>
         </div>
       </div>
@@ -91,6 +95,8 @@ export function MissionBatchPanel({ selectedDates, onRemoveDate, onClear }: Miss
           })}
         </div>
 
+        <ProfileSelect value={profileKey} onChange={setProfileKey} />
+
         <FormField label="Capacidade (todas as datas)">
           <input
             type="number"
@@ -102,7 +108,7 @@ export function MissionBatchPanel({ selectedDates, onRemoveDate, onClear }: Miss
           />
         </FormField>
 
-        <FormField label="Observações (opcional)" hint="Aplicada a todas as datas do lote">
+        <FormField label="Observações (opcional)">
           <input
             type="text"
             value={notes}

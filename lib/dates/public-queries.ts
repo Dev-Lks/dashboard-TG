@@ -1,6 +1,18 @@
-import { NextResponse } from 'next/server';
 import { createServerSupabase } from '@/lib/supabase/server';
 import { getDonationDayInfo } from '@/lib/dates/profiles';
+import { formatDateBR } from '@/lib/date-utils';
+
+export type PublicMissionDate = {
+  id: string;
+  date: string;
+  capacity: number;
+  booked: number;
+  remaining: number;
+  is_full: boolean;
+  day_name: string;
+  time_range: string;
+  formatted_date: string;
+};
 
 function formatTimeRange(times: string[]): string {
   if (times.length === 0) return 'Horário a definir';
@@ -13,10 +25,11 @@ function formatTimeRange(times: string[]): string {
   return `${fmt(first)} às ${fmt(last)}`;
 }
 
-export async function GET() {
+export async function getUpcomingMissionDates(limit = 5): Promise<PublicMissionDate[]> {
   const supabase = await createServerSupabase();
+  const today = new Date().toISOString().slice(0, 10);
 
-  const { data: dates, error } = await supabase
+  const { data: dates } = await supabase
     .from('donation_dates')
     .select(`
       id,
@@ -26,11 +39,10 @@ export async function GET() {
       donation_time_slots (time, is_active)
     `)
     .eq('is_active', true)
+    .gte('date', today)
     .order('date', { ascending: true });
 
-  if (error) {
-    return NextResponse.json({ error: 'Erro ao carregar datas' }, { status: 500 });
-  }
+  if (!dates?.length) return [];
 
   const { data: allConfirmed } = await supabase
     .from('appointments')
@@ -42,38 +54,34 @@ export async function GET() {
     bookedMap.set(a.donation_date_id, (bookedMap.get(a.donation_date_id) || 0) + 1);
   });
 
-  const result = (dates || []).flatMap((d: {
-    id: string;
-    date: string;
-    capacity: number;
-    donation_time_slots?: { time: string; is_active: boolean }[];
-  }) => {
-    const booked = bookedMap.get(d.id) || 0;
-    const remaining = Math.max(0, d.capacity - booked);
-    const isFull = booked >= d.capacity;
+  const result: PublicMissionDate[] = [];
 
+  for (const d of dates) {
     const activeSlots = (d.donation_time_slots || [])
-      .filter((slot) => slot.is_active)
-      .map((slot) => slot.time)
+      .filter((slot: { is_active: boolean }) => slot.is_active)
+      .map((slot: { time: string }) => slot.time)
       .sort();
 
-    if (activeSlots.length === 0) {
-      return [];
-    }
+    if (activeSlots.length === 0) continue;
 
+    const booked = bookedMap.get(d.id) || 0;
+    const remaining = Math.max(0, d.capacity - booked);
     const dayInfo = getDonationDayInfo(d.date);
 
-    return [{
+    result.push({
       id: d.id,
       date: d.date,
       capacity: d.capacity,
       booked,
       remaining,
-      is_full: isFull,
+      is_full: booked >= d.capacity,
       day_name: dayInfo.dayLabel,
       time_range: formatTimeRange(activeSlots),
-    }];
-  });
+      formatted_date: formatDateBR(d.date),
+    });
 
-  return NextResponse.json({ dates: result });
+    if (result.length >= limit) break;
+  }
+
+  return result;
 }

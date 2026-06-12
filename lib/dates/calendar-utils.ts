@@ -2,19 +2,19 @@ import {
   addDays,
   addMonths,
   format,
+  isBefore,
   isSameDay,
   isSameMonth,
   parseISO,
+  startOfDay,
   startOfMonth,
   startOfWeek,
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { getDonationDayInfo } from './profiles';
 
 export type CalendarDayState =
   | 'invalid'
-  | 'valid-mon'
-  | 'valid-thu'
+  | 'valid'
   | 'registered'
   | 'registered-full'
   | 'registered-inactive'
@@ -50,7 +50,7 @@ export function buildMonthGrid(
 ): CalendarDay[] {
   const monthStart = startOfMonth(month);
   const gridStart = startOfWeek(monthStart, { weekStartsOn: 0 });
-  const today = new Date();
+  const today = startOfDay(new Date());
 
   const days: CalendarDay[] = [];
   let current = gridStart;
@@ -59,8 +59,8 @@ export function buildMonthGrid(
     const dateStr = format(current, 'yyyy-MM-dd');
     const inMonth = isSameMonth(current, month);
     const isToday = isSameDay(current, today);
-    const dayInfo = getDonationDayInfo(dateStr);
     const registered = registeredMap.get(dateStr);
+    const isPast = isBefore(startOfDay(current), today);
 
     let state: CalendarDayState = 'invalid';
 
@@ -72,14 +72,8 @@ export function buildMonthGrid(
       if (!registered.is_active) state = 'registered-inactive';
       else if (registered.is_full) state = 'registered-full';
       else state = 'registered';
-    } else if (dayInfo.profileKey === 'monday') {
-      state = 'valid-mon';
-    } else if (dayInfo.profileKey === 'thursday') {
-      state = 'valid-thu';
-    }
-
-    if (isToday && state !== 'selected') {
-      // keep selected state but mark today visually via isToday flag
+    } else if (inMonth && !isPast) {
+      state = 'valid';
     }
 
     days.push({ date: current, dateStr, inMonth, isToday, state, registered });

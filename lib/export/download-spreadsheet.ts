@@ -1,20 +1,30 @@
 import { toast } from 'sonner';
+import type { TurmaId } from '@/lib/volunteers/turmas';
 
 type DownloadSpreadsheetOptions = {
   date?: string;
+  turma?: TurmaId;
 };
 
-function getFilename(date?: string): string {
-  if (date) return `TG11-doacao-${date}.xlsx`;
+function buildUrl(options?: DownloadSpreadsheetOptions): string {
+  const params = new URLSearchParams();
+  if (options?.date) params.set('date', options.date);
+  if (options?.turma) params.set('turma', options.turma);
+  const qs = params.toString();
+  return qs ? `/api/admin/export?${qs}` : '/api/admin/export';
+}
+
+function getFilename(options?: DownloadSpreadsheetOptions): string {
+  if (options?.date && options?.turma) {
+    return `TG11-${options.turma}-${options.date}.xlsx`;
+  }
+  if (options?.date) return `TG11-doacao-${options.date}.xlsx`;
+  if (options?.turma) return `TG11-${options.turma}-efetivo.xlsx`;
   return `TG 11-002 DOAÇÃO DE SANGUE-${new Date().toISOString().slice(0, 10)}.xlsx`;
 }
 
 export async function downloadSpreadsheet(options?: DownloadSpreadsheetOptions): Promise<void> {
-  const url = options?.date
-    ? `/api/admin/export?date=${encodeURIComponent(options.date)}`
-    : '/api/admin/export';
-
-  const res = await fetch(url, { credentials: 'include' });
+  const res = await fetch(buildUrl(options), { credentials: 'include' });
   if (!res.ok) {
     let msg = 'Falha ao gerar arquivo';
     try {
@@ -28,7 +38,7 @@ export async function downloadSpreadsheet(options?: DownloadSpreadsheetOptions):
   const blobUrl = window.URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = blobUrl;
-  a.download = getFilename(options?.date);
+  a.download = getFilename(options);
   document.body.appendChild(a);
   a.click();
   a.remove();

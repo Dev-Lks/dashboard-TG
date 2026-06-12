@@ -1,7 +1,8 @@
 import ExcelJS from 'exceljs';
 import { format, parseISO } from 'date-fns';
-import { getDonationDayInfo } from '@/lib/dates/profiles';
+import { getDonationDayInfo, getProfileTimeRange, type DonationProfileKey } from '@/lib/dates/profiles';
 import { normalizeRole } from '@/lib/volunteers/roles';
+import { getTurmaFromSeq, getTurmaInfo, type TurmaId } from '@/lib/volunteers/turmas';
 
 export const TG_COLUMNS = ['SEQ', 'GRAD', 'NR', 'NOME', 'NOME GUERRA', 'NASCIMENTO', 'TELEFONE'] as const;
 
@@ -44,9 +45,19 @@ export function formatDateBanner(dateStr: string): string {
   const day = format(d, 'd');
   const month = MONTHS_PT[d.getMonth()];
   const info = getDonationDayInfo(dateStr);
-  const time =
-    info.profileKey === 'monday' ? '7h às 10h' : info.profileKey === 'thursday' ? '13h às 17h' : '';
+  const time = info.profileKey ? getProfileTimeRange(info.profileKey as DonationProfileKey) : '';
   return `${day} ${month} (${info.shortLabel}) - ${time}`;
+}
+
+export function filterVolunteersByTurma(volunteers: ExportVolunteer[], turmaId: TurmaId): ExportVolunteer[] {
+  return volunteers.filter((v) => getTurmaFromSeq(v.seq) === turmaId);
+}
+
+export function filterAppointmentsByTurma(appointments: ExportAppointment[], turmaId: TurmaId): ExportAppointment[] {
+  return appointments.filter((a) => {
+    const seq = a.volunteers?.seq ?? null;
+    return getTurmaFromSeq(seq) === turmaId;
+  });
 }
 
 function applyMonAtdrColumnWidths(ws: ExcelJS.Worksheet) {
@@ -227,6 +238,42 @@ export function buildDateOnlyWorkbook(dateStr: string, appointments: ExportAppoi
   let rowNum = 1;
   rowNum = addDateSection(ws, rowNum, dateStr, appointments, 1);
 
+  applyMonAtdrColumnWidths(ws);
+  return wb;
+}
+
+export function buildTurmaWorkbook(turmaId: TurmaId, volunteers: ExportVolunteer[]) {
+  const turma = getTurmaInfo(turmaId);
+  const filtered = filterVolunteersByTurma(volunteers, turmaId);
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet(`${turma.label} ${turma.name}`);
+
+  const headerRow = ws.getRow(1);
+  headerRow.values = ['SEQ', 'GRAD', 'NR', 'NOME', 'NOME GUERRA', 'DATA DE NASCIMENTO', 'TELEFONE'];
+  styleHeaderRow(headerRow);
+
+  let rowNum = 2;
+  for (const values of buildVolunteersMasterRows(filtered)) {
+    ws.getRow(rowNum).values = values;
+    rowNum += 1;
+  }
+
+  applyVolunteersColumnWidths(ws);
+  ws.views = [{ state: 'frozen', ySplit: 1 }];
+  return wb;
+}
+
+export function buildTurmaDateWorkbook(
+  turmaId: TurmaId,
+  dateStr: string,
+  appointments: ExportAppointment[],
+) {
+  const turma = getTurmaInfo(turmaId);
+  const filtered = filterAppointmentsByTurma(appointments, turmaId);
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet(`${turma.label} ${dateStr}`);
+
+  addDateSection(ws, 1, dateStr, filtered, 1);
   applyMonAtdrColumnWidths(ws);
   return wb;
 }

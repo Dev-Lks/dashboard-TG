@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import "./globals.css";
 import { Toaster } from "sonner";
 
@@ -16,6 +17,8 @@ export const metadata: Metadata = {
   },
 };
 
+const themeScript = `(function(){try{var s=localStorage.getItem('tg-theme');var t=s==='dark'||s==='light'?s:(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);document.documentElement.style.colorScheme=t;}catch(e){}})();`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -25,8 +28,12 @@ export default function RootLayout({
     <html
       lang="pt-BR"
       className="h-full antialiased"
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-[var(--bg)] text-[var(--text)]">
+        <Script id="theme-init" strategy="beforeInteractive">
+          {themeScript}
+        </Script>
         {children}
         <Toaster position="top-center" richColors closeButton />
       </body>

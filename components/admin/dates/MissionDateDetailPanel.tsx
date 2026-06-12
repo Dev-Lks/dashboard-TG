@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { FormField } from '@/components/shared/FormField';
 import { DateCapacityIndicator } from './DateCapacityIndicator';
 import { DonationSchedulePreview } from './DonationSchedulePreview';
-import { donationProfiles, getDonationDayInfo, getDonationProfileKey } from '@/lib/dates/profiles';
+import { ProfileSelect } from './ProfileSelect';
+import { donationProfiles, getDonationDayInfo, getSuggestedProfileKey, type DonationProfileKey } from '@/lib/dates/profiles';
 import { createDateAction, updateDateAction, toggleActiveAction, deleteDateAction } from '@/app/admin/datas/actions';
 import type { RegisteredDateInfo } from '@/lib/dates/calendar-utils';
 import { formatDateBR } from '@/lib/date-utils';
@@ -30,6 +31,13 @@ export function MissionDateDetailPanel({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [capacity, setCapacity] = useState(initialCapacity);
   const [notes, setNotes] = useState(initialNotes);
+  const [profileKey, setProfileKey] = useState<DonationProfileKey>('generic');
+
+  useEffect(() => {
+    if (selectedDateStr && !registered) {
+      setProfileKey(getSuggestedProfileKey(selectedDateStr));
+    }
+  }, [selectedDateStr, registered]);
 
   if (!selectedDateStr) {
     return (
@@ -40,26 +48,14 @@ export function MissionDateDetailPanel({
   }
 
   const dayInfo = getDonationDayInfo(selectedDateStr);
-  const profileKey = getDonationProfileKey(selectedDateStr);
   const isEdit = !!registered;
-
-  if (!dayInfo.isAutomatic) {
-    return (
-      <div className="card p-5">
-        <div className="text-sm font-extrabold text-[var(--warning)]">Este dia não gera horários automaticamente</div>
-        <p className="mt-2 text-sm text-[var(--text-muted)]">
-          Apenas segundas e quintas podem ser cadastradas.
-        </p>
-      </div>
-    );
-  }
-
-  const profile = profileKey ? donationProfiles[profileKey] : null;
+  const profile = donationProfiles[profileKey];
 
   const handleCreate = () => {
     startTransition(async () => {
       const fd = new FormData();
       fd.set('date', selectedDateStr);
+      fd.set('profileKey', profileKey);
       fd.set('capacity', String(capacity));
       fd.set('notes', notes);
       const result = await createDateAction(fd);
@@ -118,6 +114,8 @@ export function MissionDateDetailPanel({
     });
   };
 
+  const registeredTimes = registered?.donation_time_slots?.map((s) => s.time) ?? [];
+
   return (
     <>
       <div className="card overflow-hidden">
@@ -130,13 +128,17 @@ export function MissionDateDetailPanel({
         </div>
 
         <div className="space-y-4 p-4">
-          {profile && (
-            <DonationSchedulePreview
-              times={profile.times}
-              dayLabel={dayInfo.dayLabel}
-              timeRange={dayInfo.timeRange}
-            />
+          {!isEdit && (
+            <ProfileSelect value={profileKey} onChange={setProfileKey} />
           )}
+
+          <DonationSchedulePreview
+            times={isEdit && registeredTimes.length > 0 ? registeredTimes : profile.times}
+            dayLabel={dayInfo.dayLabel}
+            timeRange={isEdit && registeredTimes.length > 0
+              ? `${registeredTimes[0]} – ${registeredTimes[registeredTimes.length - 1]}`
+              : profile.tableTimeRange}
+          />
 
           {isEdit && registered && (
             <DateCapacityIndicator
@@ -164,7 +166,7 @@ export function MissionDateDetailPanel({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="input"
-              placeholder="Orientação interna, observação operacional..."
+              placeholder="Orientação interna..."
             />
           </FormField>
 
