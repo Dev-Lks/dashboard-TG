@@ -32,6 +32,7 @@ export default function AgendarPage() {
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [verificationToken, setVerificationToken] = useState<string | null>(null);
   const [successData, setSuccessData] = useState<any>(null);
 
   const currentIndex = Math.max(0, steps.findIndex((s) => s.id === step));
@@ -43,14 +44,16 @@ export default function AgendarPage() {
 
   function backToSearch() {
     setVolunteer(null);
+    setVerificationToken(null);
     setSelectedDate(null);
     setSelectedTime(null);
     setSelectedSlotId(null);
     setStep('search');
   }
 
-  async function handleConfirmIdentity() {
+  async function handleConfirmIdentity(token: string) {
     if (!volunteer) return;
+    setVerificationToken(token);
     setIsLoading(true);
     try {
       const res = await fetch('/api/dates/available');
@@ -101,6 +104,12 @@ export default function AgendarPage() {
       return;
     }
 
+    if (!verificationToken) {
+      toast.error('Identidade não verificada. Volte e confirme sua data de nascimento.');
+      setStep('confirm');
+      return;
+    }
+
     setIsLoading(true);
     try {
       const res = await fetch('/api/appointments', {
@@ -110,6 +119,7 @@ export default function AgendarPage() {
           volunteerId: volunteer.id,
           donationDateId: selectedDate.id,
           timeSlotId: selectedSlotId,
+          verificationToken,
         }),
       });
 
@@ -140,14 +150,11 @@ export default function AgendarPage() {
     <PublicShell compact>
       <div className="mx-auto max-w-3xl">
         <div className="mb-5">
-          <button onClick={() => window.history.back()} className="mb-4 inline-flex items-center gap-2 text-sm font-bold text-[var(--olive)] hover:underline">
+          <button onClick={() => window.history.back()} className="mb-3 inline-flex items-center gap-2 text-sm font-bold text-[var(--olive)] hover:underline">
             <ArrowLeft className="h-4 w-4" />
             Voltar
           </button>
-          <div className="mission-panel rounded-lg px-5 py-6 sm:px-7">
-            <div className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--sand)]">Missão: Doação de Sangue</div>
-            <h1 className="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">Registrar agendamento</h1>
-          </div>
+          <h1 className="text-2xl font-extrabold tracking-tight text-[var(--olive-900)] sm:text-3xl">Agendar doação</h1>
         </div>
 
         <div className="mb-5">

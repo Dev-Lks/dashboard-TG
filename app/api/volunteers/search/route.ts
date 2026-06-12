@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   // Limit results heavily for privacy. Search across nr, war_name and full_name.
   const { data, error } = await supabase
     .from('volunteers')
-    .select('id, seq, grad, nr, full_name, war_name, birth_date, phone, created_at, updated_at')
+    .select('id, seq, grad, nr, full_name, war_name, created_at, updated_at')
     .or(`nr.ilike.%${searchTerm}%,war_name.ilike.%${searchTerm}%,full_name.ilike.%${searchTerm}%`)
     .order('nr', { ascending: true })
     .limit(8);

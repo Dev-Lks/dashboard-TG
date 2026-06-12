@@ -3,6 +3,7 @@ import {
   adminLoginSchema,
   createAppointmentSchema,
   donationDateSchema,
+  verifyVolunteerSchema,
   volunteerSearchSchema,
 } from './schemas';
 
@@ -14,16 +15,24 @@ describe('volunteerSearchSchema', () => {
 });
 
 describe('createAppointmentSchema', () => {
-  it('requires valid UUIDs', () => {
+  it('requires valid UUIDs and verification token', () => {
     const valid = createAppointmentSchema.safeParse({
       volunteerId: '550e8400-e29b-41d4-a716-446655440000',
       donationDateId: '6ba7b810-9dad-11d1-80b4-00c04fd430c8',
+      verificationToken: 'signed-token',
     });
     expect(valid.success).toBe(true);
+
+    const missingToken = createAppointmentSchema.safeParse({
+      volunteerId: '550e8400-e29b-41d4-a716-446655440000',
+      donationDateId: '6ba7b810-9dad-11d1-80b4-00c04fd430c8',
+    });
+    expect(missingToken.success).toBe(false);
 
     const invalid = createAppointmentSchema.safeParse({
       volunteerId: 'not-a-uuid',
       donationDateId: '6ba7b810-9dad-11d1-80b4-00c04fd430c8',
+      verificationToken: 'signed-token',
     });
     expect(invalid.success).toBe(false);
   });
@@ -46,6 +55,23 @@ describe('donationDateSchema', () => {
   it('rejects capacity outside 1-50', () => {
     expect(donationDateSchema.safeParse({ date: '2025-06-02', capacity: 0 }).success).toBe(false);
     expect(donationDateSchema.safeParse({ date: '2025-06-02', capacity: 51 }).success).toBe(false);
+  });
+});
+
+describe('verifyVolunteerSchema', () => {
+  it('requires volunteerId UUID and YYYY-MM-DD birthDate', () => {
+    const valid = verifyVolunteerSchema.safeParse({
+      volunteerId: '550e8400-e29b-41d4-a716-446655440000',
+      birthDate: '2005-08-29',
+    });
+    expect(valid.success).toBe(true);
+
+    expect(
+      verifyVolunteerSchema.safeParse({
+        volunteerId: '550e8400-e29b-41d4-a716-446655440000',
+        birthDate: '29/08/2005',
+      }).success,
+    ).toBe(false);
   });
 });
 

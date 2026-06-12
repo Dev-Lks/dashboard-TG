@@ -4,10 +4,16 @@ export const volunteerSearchSchema = z.object({
   query: z.string().min(2, 'Digite pelo menos 2 caracteres').max(80),
 });
 
+export const verifyVolunteerSchema = z.object({
+  volunteerId: z.string().uuid(),
+  birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data inválida'),
+});
+
 export const createAppointmentSchema = z.object({
   volunteerId: z.string().uuid(),
   donationDateId: z.string().uuid(),
   timeSlotId: z.string().uuid().optional().nullable(),
+  verificationToken: z.string().min(1),
 });
 
 export const adminLoginSchema = z.object({
@@ -38,6 +44,7 @@ export const rescheduleAppointmentSchema = z.object({
 });
 
 export type VolunteerSearchInput = z.infer<typeof volunteerSearchSchema>;
+export type VerifyVolunteerInput = z.infer<typeof verifyVolunteerSchema>;
 export type CreateAppointmentInput = z.infer<typeof createAppointmentSchema>;
 export type AdminLoginInput = z.infer<typeof adminLoginSchema>;
 export type DonationDateInput = z.infer<typeof donationDateSchema>;

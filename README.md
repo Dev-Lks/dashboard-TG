@@ -61,6 +61,7 @@ NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...          # Server-side apenas
 ADMIN_PASSWORD=sua-senha-forte-aqui
+VERIFICATION_SECRET=string-aleatoria-longa   # opcional; usa ADMIN_PASSWORD se omitido
 ```
 
 ### 5. Rodar localmente
@@ -158,7 +159,8 @@ supabase/migrations/   → SQL completo (execute no dashboard)
 
 - A área pública **não lista** todos os voluntários.
 - A busca retorna no máximo ~8 resultados.
-- Telefone e data de nascimento **não aparecem** na área pública.
+- Telefone e data de nascimento **não aparecem** na busca nem na confirmação.
+- A data de nascimento é usada apenas para **verificar identidade** antes do agendamento.
 - Dados completos só aparecem no admin e na exportação.
 
 ## Manutenção

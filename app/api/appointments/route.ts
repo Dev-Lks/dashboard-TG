@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabase } from '@/lib/supabase/server';
 import { createAppointmentSchema } from '@/lib/schemas';
+import { verifyVerificationToken } from '@/lib/volunteer-verification';
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
@@ -10,7 +11,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 });
   }
 
-  const { volunteerId, donationDateId, timeSlotId } = parsed.data;
+  const { volunteerId, donationDateId, timeSlotId, verificationToken } = parsed.data;
+
+  if (!verifyVerificationToken(verificationToken, volunteerId)) {
+    return NextResponse.json(
+      { error: 'Identidade não verificada. Volte e confirme sua data de nascimento.' },
+      { status: 403 },
+    );
+  }
 
   const supabase = await createServerSupabase();
 
