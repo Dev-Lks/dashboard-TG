@@ -19,6 +19,7 @@ export const createAppointmentSchema = z.object({
 export const lookupAppointmentSchema = z.object({
   volunteerId: z.string().uuid(),
   verificationToken: z.string().min(1),
+  missionSlug: z.string().optional(),
 });
 
 export const adminLoginSchema = z.object({

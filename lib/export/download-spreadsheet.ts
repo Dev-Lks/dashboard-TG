@@ -10,12 +10,14 @@ import {
 type DownloadSpreadsheetOptions = {
   date?: string;
   turma?: TurmaId;
+  mission?: string;
 };
 
 function buildUrl(options?: DownloadSpreadsheetOptions): string {
   const params = new URLSearchParams();
   if (options?.date) params.set('date', options.date);
   if (options?.turma) params.set('turma', options.turma);
+  if (options?.mission) params.set('mission', options.mission);
   const qs = params.toString();
   return qs ? `/api/admin/export?${qs}` : '/api/admin/export';
 }
@@ -24,7 +26,7 @@ function getFilename(options?: DownloadSpreadsheetOptions): string {
   if (options?.date && options?.turma) {
     return exportFilenameByTurmaAndDate(options.turma, options.date);
   }
-  if (options?.date) return exportFilenameByDate(options.date);
+  if (options?.date) return exportFilenameByDate(undefined, options.date);
   if (options?.turma) return exportFilenameByTurma(options.turma);
   return exportFilenameFull();
 }

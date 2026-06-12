@@ -5,25 +5,29 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { X } from 'lucide-react';
 import { FormField } from '@/components/shared/FormField';
-import { ProfileSelect } from './ProfileSelect';
+import { ScheduleEditor, type ScheduleEditorValue } from './ScheduleEditor';
 import { createDatesBatchAction } from '@/app/admin/datas/actions';
-import { getDonationDayInfo, getSuggestedProfileKey, type DonationProfileKey } from '@/lib/dates/profiles';
+import type { Mission } from '@/lib/missions/types';
 import { formatDateBR } from '@/lib/date-utils';
 
 type MissionBatchPanelProps = {
+  mission: Mission;
   selectedDates: string[];
   onRemoveDate: (dateStr: string) => void;
   onClear: () => void;
 };
 
-export function MissionBatchPanel({ selectedDates, onRemoveDate, onClear }: MissionBatchPanelProps) {
+export function MissionBatchPanel({ mission, selectedDates, onRemoveDate, onClear }: MissionBatchPanelProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [capacity, setCapacity] = useState(15);
+  const [capacity, setCapacity] = useState(mission.default_capacity);
   const [notes, setNotes] = useState('');
-  const [profileKey, setProfileKey] = useState<DonationProfileKey>(() =>
-    selectedDates.length > 0 ? getSuggestedProfileKey(selectedDates[0]) : 'generic'
-  );
+  const [schedule, setSchedule] = useState<ScheduleEditorValue>({
+    mode: mission.default_schedule_mode,
+    start: '07:00',
+    end: '10:00',
+    interval: 30,
+  });
 
   if (selectedDates.length === 0) return null;
 
@@ -31,7 +35,12 @@ export function MissionBatchPanel({ selectedDates, onRemoveDate, onClear }: Miss
 
   const handleBatchCreate = () => {
     startTransition(async () => {
-      const result = await createDatesBatchAction(sorted, capacity, notes || null, profileKey);
+      const result = await createDatesBatchAction(mission.id, sorted, capacity, notes || null, {
+        scheduleMode: schedule.mode,
+        scheduleStart: schedule.start,
+        scheduleEnd: schedule.end,
+        slotInterval: schedule.interval,
+      });
       if (result.success) {
         const msg =
           result.skipped && result.skipped > 0
@@ -56,70 +65,46 @@ export function MissionBatchPanel({ selectedDates, onRemoveDate, onClear }: Miss
               Cadastro em lote
             </div>
             <p className="mt-1 text-sm text-[var(--text-muted)]">
-              {selectedDates.length} data(s) selecionada(s)
+              {selectedDates.length} data(s) · {mission.name}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onClear}
-            className="text-xs font-bold text-[var(--text-muted)] hover:text-[var(--danger)]"
-          >
-            Limpar
+          <button type="button" onClick={onClear} className="rounded p-1 hover:bg-[var(--surface-muted)]" aria-label="Limpar seleção">
+            <X className="h-4 w-4" />
           </button>
         </div>
       </div>
 
       <div className="space-y-4 p-4">
-        <div className="max-h-40 space-y-1 overflow-y-auto">
-          {sorted.map((dateStr) => {
-            const info = getDonationDayInfo(dateStr);
-            return (
-              <div
-                key={dateStr}
-                className="flex items-center justify-between rounded border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2 text-sm"
-              >
-                <div>
-                  <span className="font-bold text-[var(--olive-900)]">{formatDateBR(dateStr)}</span>
-                  <span className="ml-2 text-xs text-[var(--text-muted)]">{info.shortLabel}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => onRemoveDate(dateStr)}
-                  className="flex h-7 w-7 items-center justify-center rounded text-[var(--text-muted)] hover:bg-[var(--surface)] hover:text-[var(--danger)]"
-                  aria-label={`Remover ${dateStr}`}
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            );
-          })}
+        <div className="flex flex-wrap gap-2">
+          {sorted.map((dateStr) => (
+            <span key={dateStr} className="inline-flex items-center gap-1 rounded border border-[var(--border)] bg-[var(--surface-muted)] px-2 py-1 text-xs font-bold">
+              {formatDateBR(dateStr)}
+              <button type="button" onClick={() => onRemoveDate(dateStr)} className="text-[var(--text-muted)] hover:text-[var(--danger)]">
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          ))}
         </div>
 
-        <ProfileSelect value={profileKey} onChange={setProfileKey} />
+        <ScheduleEditor value={schedule} onChange={setSchedule} />
 
         <FormField label="Capacidade (todas as datas)">
           <input
             type="number"
             value={capacity}
-            onChange={(e) => setCapacity(Math.min(15, Math.max(1, parseInt(e.target.value) || 15)))}
+            onChange={(e) => setCapacity(Math.min(100, Math.max(1, parseInt(e.target.value) || mission.default_capacity)))}
             min={1}
-            max={15}
+            max={100}
             className="input"
           />
         </FormField>
 
-        <FormField label="Observações (opcional)">
-          <input
-            type="text"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            className="input"
-            placeholder="Orientação interna..."
-          />
+        <FormField label="Observações">
+          <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} className="input" placeholder="Opcional..." />
         </FormField>
 
         <button type="button" onClick={handleBatchCreate} disabled={pending} className="btn btn-primary w-full">
-          {pending ? 'Cadastrando...' : `Cadastrar ${selectedDates.length} data(s)`}
+          Cadastrar {selectedDates.length} data(s)
         </button>
       </div>
     </div>

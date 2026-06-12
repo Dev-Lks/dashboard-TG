@@ -11,12 +11,19 @@ export type Volunteer = {
   updated_at: string;
 };
 
+export type ScheduleMode = 'slots' | 'presence_only';
+
 export type DonationDate = {
   id: string;
+  mission_id: string;
   date: string; // YYYY-MM-DD
   capacity: number;
   is_active: boolean;
   notes: string | null;
+  schedule_mode: ScheduleMode;
+  schedule_start: string | null;
+  schedule_end: string | null;
+  slot_interval: number | null;
   created_at: string;
   updated_at: string;
 };
@@ -33,6 +40,7 @@ export type Appointment = {
   id: string;
   volunteer_id: string;
   donation_date_id: string;
+  mission_id: string;
   time_slot_id: string | null;
   status: 'confirmed' | 'cancelled';
   admin_notes: string | null;
@@ -55,6 +63,7 @@ export type AvailableDate = {
   is_full: boolean;
   day_name: string;
   time_range: string;
+  schedule_mode: ScheduleMode;
 };
 
 export type AvailableSlot = {

@@ -23,12 +23,14 @@ export type CalendarDayState =
 
 export type RegisteredDateInfo = {
   id: string;
+  mission_id?: string;
   date: string;
   capacity: number;
   is_active: boolean;
   booked: number;
   remaining: number;
   is_full: boolean;
+  schedule_mode?: 'slots' | 'presence_only';
   notes?: string | null;
   donation_time_slots?: { time: string }[];
 };

@@ -1,6 +1,8 @@
 import { createServerSupabase } from '@/lib/supabase/server';
-import { getDonationDayInfo } from '@/lib/dates/profiles';
+import { formatDayName, formatTimeRangeFromSlots } from '@/lib/dates/schedule-display';
 import { formatDateBR } from '@/lib/date-utils';
+import type { Mission } from '@/lib/missions/types';
+import type { ScheduleMode } from '@/lib/types';
 
 export type PublicMissionDate = {
   id: string;
@@ -12,22 +14,26 @@ export type PublicMissionDate = {
   day_name: string;
   time_range: string;
   formatted_date: string;
+  schedule_mode: ScheduleMode;
 };
 
-function formatTimeRange(times: string[]): string {
-  if (times.length === 0) return 'Horário a definir';
-  const first = times[0];
-  const last = times[times.length - 1];
-  const fmt = (t: string) => {
-    const [h, m] = t.split(':');
-    return m === '00' ? `${h}h` : `${h}h${m}`;
-  };
-  return `${fmt(first)} às ${fmt(last)}`;
-}
+export type PublicMissionWithDates = Mission & {
+  upcoming_dates: PublicMissionDate[];
+  open_dates_count: number;
+};
 
-export async function getUpcomingMissionDates(limit = 5): Promise<PublicMissionDate[]> {
+export async function getPublicMissionsWithDates(): Promise<PublicMissionWithDates[]> {
   const supabase = await createServerSupabase();
   const today = new Date().toISOString().slice(0, 10);
+
+  const { data: missions } = await supabase
+    .from('missions')
+    .select('*')
+    .eq('is_public', true)
+    .order('sort_order', { ascending: true })
+    .order('name', { ascending: true });
+
+  if (!missions?.length) return [];
 
   const { data: dates } = await supabase
     .from('donation_dates')
@@ -36,13 +42,96 @@ export async function getUpcomingMissionDates(limit = 5): Promise<PublicMissionD
       date,
       capacity,
       is_active,
+      mission_id,
+      schedule_mode,
       donation_time_slots (time, is_active)
     `)
     .eq('is_active', true)
     .gte('date', today)
     .order('date', { ascending: true });
 
-  if (!dates?.length) return [];
+  const { data: allConfirmed } = await supabase
+    .from('appointments')
+    .select('donation_date_id')
+    .eq('status', 'confirmed');
+
+  const bookedMap = new Map<string, number>();
+  (allConfirmed || []).forEach((a: { donation_date_id: string }) => {
+    bookedMap.set(a.donation_date_id, (bookedMap.get(a.donation_date_id) || 0) + 1);
+  });
+
+  return (missions as Mission[]).map((mission) => {
+    const missionDates = (dates || []).filter((d: { mission_id: string }) => d.mission_id === mission.id);
+    const upcoming: PublicMissionDate[] = [];
+
+    for (const d of missionDates) {
+      const activeSlots = (d.donation_time_slots || [])
+        .filter((slot: { is_active: boolean }) => slot.is_active)
+        .map((slot: { time: string }) => slot.time)
+        .sort();
+
+      const scheduleMode = d.schedule_mode as ScheduleMode;
+      if (scheduleMode === 'slots' && activeSlots.length === 0) continue;
+
+      const booked = bookedMap.get(d.id) || 0;
+      const remaining = Math.max(0, d.capacity - booked);
+
+      upcoming.push({
+        id: d.id,
+        date: d.date,
+        capacity: d.capacity,
+        booked,
+        remaining,
+        is_full: booked >= d.capacity,
+        day_name: formatDayName(d.date),
+        time_range: scheduleMode === 'presence_only'
+          ? 'Presença no dia'
+          : formatTimeRangeFromSlots(activeSlots),
+        formatted_date: formatDateBR(d.date),
+        schedule_mode: scheduleMode,
+      });
+    }
+
+    return {
+      ...mission,
+      upcoming_dates: upcoming.slice(0, 5),
+      open_dates_count: upcoming.filter((d) => !d.is_full).length,
+    };
+  });
+}
+
+export async function getUpcomingMissionDates(missionSlug: string, limit = 12): Promise<{
+  mission: Mission | null;
+  dates: PublicMissionDate[];
+}> {
+  const supabase = await createServerSupabase();
+  const today = new Date().toISOString().slice(0, 10);
+
+  const { data: mission } = await supabase
+    .from('missions')
+    .select('*')
+    .eq('slug', missionSlug)
+    .eq('is_public', true)
+    .maybeSingle();
+
+  if (!mission) return { mission: null, dates: [] };
+
+  const { data: dates } = await supabase
+    .from('donation_dates')
+    .select(`
+      id,
+      date,
+      capacity,
+      is_active,
+      schedule_mode,
+      donation_time_slots (time, is_active)
+    `)
+    .eq('mission_id', mission.id)
+    .eq('is_active', true)
+    .gte('date', today)
+    .order('date', { ascending: true });
+
+  if (!dates?.length) return { mission: mission as Mission, dates: [] };
 
   const { data: allConfirmed } = await supabase
     .from('appointments')
@@ -62,11 +151,11 @@ export async function getUpcomingMissionDates(limit = 5): Promise<PublicMissionD
       .map((slot: { time: string }) => slot.time)
       .sort();
 
-    if (activeSlots.length === 0) continue;
+    const scheduleMode = d.schedule_mode as ScheduleMode;
+    if (scheduleMode === 'slots' && activeSlots.length === 0) continue;
 
     const booked = bookedMap.get(d.id) || 0;
     const remaining = Math.max(0, d.capacity - booked);
-    const dayInfo = getDonationDayInfo(d.date);
 
     result.push({
       id: d.id,
@@ -75,13 +164,16 @@ export async function getUpcomingMissionDates(limit = 5): Promise<PublicMissionD
       booked,
       remaining,
       is_full: booked >= d.capacity,
-      day_name: dayInfo.dayLabel,
-      time_range: formatTimeRange(activeSlots),
+      day_name: formatDayName(d.date),
+      time_range: scheduleMode === 'presence_only'
+        ? 'Presença no dia'
+        : formatTimeRangeFromSlots(activeSlots),
       formatted_date: formatDateBR(d.date),
+      schedule_mode: scheduleMode,
     });
 
     if (result.length >= limit) break;
   }
 
-  return result;
+  return { mission: mission as Mission, dates: result };
 }

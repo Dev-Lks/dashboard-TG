@@ -1,13 +1,13 @@
 import { PublicShell } from '@/components/layout/PublicShell';
-import { EventHero } from '@/components/EventHero';
-import { getUpcomingMissionDates } from '@/lib/dates/public-queries';
+import { MissionHub } from '@/components/MissionHub';
+import { getPublicMissionsWithDates } from '@/lib/dates/public-queries';
 
 export default async function LandingPage() {
-  const dates = await getUpcomingMissionDates(12);
+  const missions = await getPublicMissionsWithDates();
 
   return (
     <PublicShell>
-      <EventHero dates={dates} />
+      <MissionHub missions={missions} />
     </PublicShell>
   );
 }

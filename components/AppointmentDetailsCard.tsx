@@ -11,6 +11,7 @@ export type AppointmentDetails = {
   date: string;
   dayName: string;
   time: string | null;
+  missionName?: string | null;
 };
 
 type Variant = 'success' | 'lookup';
@@ -32,6 +33,7 @@ export function AppointmentDetailsCard({
   date,
   dayName,
   time,
+  missionName,
   variant = 'lookup',
   footer,
 }: AppointmentDetailsCardProps) {
@@ -61,12 +63,18 @@ export function AppointmentDetailsCard({
         </div>
 
         <div className="border-t pt-5">
+          {missionName && (
+            <div className="mb-3 text-sm">
+              <span className="text-[var(--text-muted)]">Missão:</span>{' '}
+              <span className="font-semibold">{missionName}</span>
+            </div>
+          )}
           <div className="flex gap-3">
             <Calendar className="h-5 w-5 text-[var(--olive)] mt-0.5" />
             <div>
               <div className="font-semibold text-lg tracking-tight">{formattedDate}</div>
               <div className="text-[var(--olive)] font-bold flex items-center gap-1.5 mt-0.5">
-                <Clock className="h-4 w-4" /> {time || 'Horário a confirmar'}
+                <Clock className="h-4 w-4" /> {time || 'Presença no dia'}
               </div>
             </div>
           </div>

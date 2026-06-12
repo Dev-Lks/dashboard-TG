@@ -1,8 +1,9 @@
 'use server';
 
 import { requireAdmin } from '@/lib/admin-auth';
-import { donationProfiles, isDonationProfileKey } from '@/lib/dates/profiles';
+import { generateTimeSlots } from '@/lib/dates/slot-generator';
 import { createServiceRoleClient } from '@/lib/supabase/server';
+import type { ScheduleMode } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 
 export type DateActionResult = {
@@ -10,36 +11,83 @@ export type DateActionResult = {
   error?: string;
 };
 
+type ScheduleInput = {
+  scheduleMode: ScheduleMode;
+  scheduleStart?: string | null;
+  scheduleEnd?: string | null;
+  slotInterval?: number | null;
+};
+
+function parseScheduleFromForm(formData: FormData): ScheduleInput {
+  const scheduleMode = formData.get('scheduleMode') === 'presence_only' ? 'presence_only' : 'slots';
+  return {
+    scheduleMode,
+    scheduleStart: (formData.get('scheduleStart') as string) || null,
+    scheduleEnd: (formData.get('scheduleEnd') as string) || null,
+    slotInterval: parseInt(formData.get('slotInterval') as string) || 30,
+  };
+}
+
+function buildSlotRows(dateId: string, schedule: ScheduleInput) {
+  if (schedule.scheduleMode !== 'slots') return [];
+  const start = schedule.scheduleStart || '08:00';
+  const end = schedule.scheduleEnd || '12:00';
+  const interval = schedule.slotInterval || 30;
+  const times = generateTimeSlots(start, end, interval);
+  if (times.length === 0) return [];
+  return times.map((t) => ({ donation_date_id: dateId, time: t, is_active: true }));
+}
+
 export async function createDateAction(formData: FormData): Promise<DateActionResult> {
   await requireAdmin();
 
+  const missionId = formData.get('missionId') as string;
   const dateStr = formData.get('date') as string;
-  const profileKeyRaw = formData.get('profileKey') as string;
   const requestedCapacity = parseInt(formData.get('capacity') as string) || 15;
-  const capacity = Math.max(1, Math.min(15, requestedCapacity));
+  const capacity = Math.max(1, Math.min(100, requestedCapacity));
   const notes = (formData.get('notes') as string) || null;
+  const schedule = parseScheduleFromForm(formData);
 
+  if (!missionId) return { success: false, error: 'Missão é obrigatória' };
   if (!dateStr) return { success: false, error: 'Data é obrigatória' };
-  if (!isDonationProfileKey(profileKeyRaw)) {
-    return { success: false, error: 'Perfil de horário inválido' };
+
+  if (schedule.scheduleMode === 'slots') {
+    const times = generateTimeSlots(
+      schedule.scheduleStart || '08:00',
+      schedule.scheduleEnd || '12:00',
+      schedule.slotInterval || 30,
+    );
+    if (times.length === 0) {
+      return { success: false, error: 'Configure um intervalo de horários válido' };
+    }
   }
 
-  const profile = donationProfiles[profileKeyRaw];
   const supabase = createServiceRoleClient();
 
   const { data: existing } = await supabase
     .from('donation_dates')
     .select('id')
+    .eq('mission_id', missionId)
     .eq('date', dateStr)
     .maybeSingle();
 
   if (existing) {
-    return { success: false, error: 'Data já cadastrada' };
+    return { success: false, error: 'Data já cadastrada nesta missão' };
   }
 
   const { data: newDate, error } = await supabase
     .from('donation_dates')
-    .insert({ date: dateStr, capacity, notes, is_active: true })
+    .insert({
+      mission_id: missionId,
+      date: dateStr,
+      capacity,
+      notes,
+      is_active: true,
+      schedule_mode: schedule.scheduleMode,
+      schedule_start: schedule.scheduleMode === 'slots' ? schedule.scheduleStart : null,
+      schedule_end: schedule.scheduleMode === 'slots' ? schedule.scheduleEnd : null,
+      slot_interval: schedule.scheduleMode === 'slots' ? schedule.slotInterval : null,
+    })
     .select('id')
     .single();
 
@@ -47,8 +95,10 @@ export async function createDateAction(formData: FormData): Promise<DateActionRe
     return { success: false, error: 'Erro ao cadastrar data' };
   }
 
-  const slots = profile.times.map((t) => ({ donation_date_id: newDate.id, time: t, is_active: true }));
-  await supabase.from('donation_time_slots').insert(slots);
+  const slots = buildSlotRows(newDate.id, schedule);
+  if (slots.length > 0) {
+    await supabase.from('donation_time_slots').insert(slots);
+  }
 
   revalidatePath('/admin/datas');
   revalidatePath('/admin');
@@ -63,23 +113,29 @@ export type BatchCreateResult = DateActionResult & {
 };
 
 export async function createDatesBatchAction(
+  missionId: string,
   dates: string[],
   capacity = 15,
   notes: string | null = null,
-  profileKey: string = 'generic',
+  schedule: ScheduleInput,
 ): Promise<BatchCreateResult> {
   await requireAdmin();
 
-  if (!dates.length) {
-    return { success: false, error: 'Selecione ao menos uma data' };
+  if (!missionId) return { success: false, error: 'Missão é obrigatória' };
+  if (!dates.length) return { success: false, error: 'Selecione ao menos uma data' };
+
+  if (schedule.scheduleMode === 'slots') {
+    const times = generateTimeSlots(
+      schedule.scheduleStart || '08:00',
+      schedule.scheduleEnd || '12:00',
+      schedule.slotInterval || 30,
+    );
+    if (times.length === 0) {
+      return { success: false, error: 'Configure um intervalo de horários válido' };
+    }
   }
 
-  if (!isDonationProfileKey(profileKey)) {
-    return { success: false, error: 'Perfil de horário inválido' };
-  }
-
-  const profile = donationProfiles[profileKey];
-  const cappedCapacity = Math.max(1, Math.min(15, capacity));
+  const cappedCapacity = Math.max(1, Math.min(100, capacity));
   const supabase = createServiceRoleClient();
   let created = 0;
   let skipped = 0;
@@ -89,6 +145,7 @@ export async function createDatesBatchAction(
     const { data: existing } = await supabase
       .from('donation_dates')
       .select('id')
+      .eq('mission_id', missionId)
       .eq('date', dateStr)
       .maybeSingle();
 
@@ -99,7 +156,17 @@ export async function createDatesBatchAction(
 
     const { data: newDate, error } = await supabase
       .from('donation_dates')
-      .insert({ date: dateStr, capacity: cappedCapacity, notes, is_active: true })
+      .insert({
+        mission_id: missionId,
+        date: dateStr,
+        capacity: cappedCapacity,
+        notes,
+        is_active: true,
+        schedule_mode: schedule.scheduleMode,
+        schedule_start: schedule.scheduleMode === 'slots' ? schedule.scheduleStart : null,
+        schedule_end: schedule.scheduleMode === 'slots' ? schedule.scheduleEnd : null,
+        slot_interval: schedule.scheduleMode === 'slots' ? schedule.slotInterval : null,
+      })
       .select('id')
       .single();
 
@@ -109,8 +176,10 @@ export async function createDatesBatchAction(
       continue;
     }
 
-    const slots = profile.times.map((t) => ({ donation_date_id: newDate.id, time: t, is_active: true }));
-    await supabase.from('donation_time_slots').insert(slots);
+    const slots = buildSlotRows(newDate.id, schedule);
+    if (slots.length > 0) {
+      await supabase.from('donation_time_slots').insert(slots);
+    }
     created++;
   }
 
@@ -136,7 +205,7 @@ export async function updateDateAction(formData: FormData): Promise<DateActionRe
 
   const id = formData.get('id') as string;
   const requestedCapacity = parseInt(formData.get('capacity') as string) || 15;
-  const capacity = Math.max(1, Math.min(15, requestedCapacity));
+  const capacity = Math.max(1, Math.min(100, requestedCapacity));
   const notes = (formData.get('notes') as string) || null;
 
   if (!id) return { success: false, error: 'ID inválido' };

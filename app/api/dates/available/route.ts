@@ -1,32 +1,45 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabase } from '@/lib/supabase/server';
-import { getDonationDayInfo } from '@/lib/dates/profiles';
+import { formatDayName, formatTimeRangeFromSlots } from '@/lib/dates/schedule-display';
+import type { ScheduleMode } from '@/lib/types';
 
-function formatTimeRange(times: string[]): string {
-  if (times.length === 0) return 'Horário a definir';
-  const first = times[0];
-  const last = times[times.length - 1];
-  const fmt = (t: string) => {
-    const [h, m] = t.split(':');
-    return m === '00' ? `${h}h` : `${h}h${m}`;
-  };
-  return `${fmt(first)} às ${fmt(last)}`;
-}
-
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const missionSlug = request.nextUrl.searchParams.get('mission');
   const supabase = await createServerSupabase();
 
-  const { data: dates, error } = await supabase
+  let missionId: string | null = null;
+  if (missionSlug) {
+    const { data: mission } = await supabase
+      .from('missions')
+      .select('id, is_public')
+      .eq('slug', missionSlug)
+      .maybeSingle();
+
+    if (!mission?.is_public) {
+      return NextResponse.json({ dates: [], mission: null });
+    }
+    missionId = mission.id;
+  }
+
+  let datesQuery = supabase
     .from('donation_dates')
     .select(`
       id,
       date,
       capacity,
       is_active,
+      schedule_mode,
+      mission_id,
       donation_time_slots (time, is_active)
     `)
     .eq('is_active', true)
     .order('date', { ascending: true });
+
+  if (missionId) {
+    datesQuery = datesQuery.eq('mission_id', missionId);
+  }
+
+  const { data: dates, error } = await datesQuery;
 
   if (error) {
     return NextResponse.json({ error: 'Erro ao carregar datas' }, { status: 500 });
@@ -46,6 +59,7 @@ export async function GET() {
     id: string;
     date: string;
     capacity: number;
+    schedule_mode: ScheduleMode;
     donation_time_slots?: { time: string; is_active: boolean }[];
   }) => {
     const booked = bookedMap.get(d.id) || 0;
@@ -57,11 +71,9 @@ export async function GET() {
       .map((slot) => slot.time)
       .sort();
 
-    if (activeSlots.length === 0) {
+    if (d.schedule_mode === 'slots' && activeSlots.length === 0) {
       return [];
     }
-
-    const dayInfo = getDonationDayInfo(d.date);
 
     return [{
       id: d.id,
@@ -70,8 +82,11 @@ export async function GET() {
       booked,
       remaining,
       is_full: isFull,
-      day_name: dayInfo.dayLabel,
-      time_range: formatTimeRange(activeSlots),
+      day_name: formatDayName(d.date),
+      time_range: d.schedule_mode === 'presence_only'
+        ? 'Presença no dia'
+        : formatTimeRangeFromSlots(activeSlots),
+      schedule_mode: d.schedule_mode,
     }];
   });
 

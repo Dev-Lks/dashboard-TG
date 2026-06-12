@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabase } from '@/lib/supabase/server';
 import { lookupAppointmentSchema } from '@/lib/schemas';
 import { verifyVerificationToken } from '@/lib/volunteer-verification';
-import { getDonationDayInfo } from '@/lib/dates/profiles';
+import { formatDayName } from '@/lib/dates/schedule-display';
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 });
   }
 
-  const { volunteerId, verificationToken } = parsed.data;
+  const { volunteerId, verificationToken, missionSlug } = parsed.data;
 
   if (!verifyVerificationToken(verificationToken, volunteerId)) {
     return NextResponse.json(
@@ -23,19 +23,34 @@ export async function POST(request: NextRequest) {
 
   const supabase = await createServerSupabase();
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('appointments')
     .select(`
       id,
       status,
       created_at,
+      mission_id,
       volunteers (nr, grad, full_name, war_name),
-      donation_dates (date),
+      donation_dates (date, mission_id, missions (name, slug)),
       donation_time_slots (time)
     `)
     .eq('volunteer_id', volunteerId)
-    .eq('status', 'confirmed')
-    .maybeSingle();
+    .eq('status', 'confirmed');
+
+  if (missionSlug) {
+    const { data: mission } = await supabase
+      .from('missions')
+      .select('id')
+      .eq('slug', missionSlug)
+      .maybeSingle();
+
+    if (mission) {
+      query = query.eq('mission_id', mission.id);
+    }
+  }
+
+  const { data: rows, error } = await query.order('created_at', { ascending: false }).limit(5);
+  const data = rows?.[0] ?? null;
 
   if (error) {
     console.error('Lookup appointment error', error);
@@ -56,7 +71,10 @@ export async function POST(request: NextRequest) {
   const volunteerRaw = data.volunteers as VolunteerRecord | VolunteerRecord[] | null;
   const volunteer = Array.isArray(volunteerRaw) ? volunteerRaw[0] : volunteerRaw;
 
-  const donationDateRaw = data.donation_dates as { date: string } | { date: string }[] | null;
+  const donationDateRaw = data.donation_dates as {
+    date: string;
+    missions?: { name: string; slug: string } | { name: string; slug: string }[] | null;
+  } | { date: string; missions?: { name: string; slug: string } | { name: string; slug: string }[] | null }[] | null;
   const donationDate = Array.isArray(donationDateRaw) ? donationDateRaw[0] : donationDateRaw;
 
   const timeSlotRaw = data.donation_time_slots as { time: string } | { time: string }[] | null;
@@ -66,7 +84,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ appointment: null });
   }
 
-  const dayInfo = getDonationDayInfo(donationDate.date);
+  const missionRaw = donationDate.missions;
+  const mission = Array.isArray(missionRaw) ? missionRaw[0] : missionRaw;
 
   return NextResponse.json({
     appointment: {
@@ -75,8 +94,9 @@ export async function POST(request: NextRequest) {
       fullName: volunteer.full_name,
       grad: volunteer.grad,
       date: donationDate.date,
-      dayName: dayInfo.dayLabel,
+      dayName: formatDayName(donationDate.date),
       time: timeSlot?.time ?? null,
+      missionName: mission?.name ?? null,
     },
   });
 }

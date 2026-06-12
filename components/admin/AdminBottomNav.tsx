@@ -2,12 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart3, Calendar, Users, ClipboardList } from 'lucide-react';
+import { BarChart3, Calendar, Users, ClipboardList, Flag } from 'lucide-react';
 
 const navItems = [
-  { href: '/admin', label: 'Dashboard', icon: BarChart3, exact: true },
+  { href: '/admin', label: 'Início', icon: BarChart3, exact: true },
+  { href: '/admin/missoes', label: 'Missões', icon: Flag },
   { href: '/admin/datas', label: 'Datas', icon: Calendar },
-  { href: '/admin/voluntarios', label: 'Efetivo', icon: Users },
   { href: '/admin/agendamentos', label: 'Agenda', icon: ClipboardList },
 ];
 

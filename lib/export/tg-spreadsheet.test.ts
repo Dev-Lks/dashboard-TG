@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { parseExcelDateValue } from '@/lib/volunteer-import';
+import { formatDateBanner } from '@/lib/dates/schedule-display';
 import {
   buildFullTgWorkbook,
   filterAppointmentsByTurma,
   filterVolunteersByTurma,
-  formatDateBanner,
   formatGradForExport,
   groupAppointmentsByDate,
   sortAppointmentsByWarName,
@@ -78,12 +78,12 @@ describe('filterAppointmentsByTurma', () => {
 });
 
 describe('formatDateBanner', () => {
-  it('formats Monday mission banner', () => {
-    expect(formatDateBanner('2025-06-02')).toBe('2 JUN (SEG) - 07h às 10h');
+  it('formats banner with slot times', () => {
+    expect(formatDateBanner('2025-06-02', ['07:00', '10:00'])).toBe('2 JUN (SEG) — 07:00 a 10:00');
   });
 
-  it('formats Thursday mission banner', () => {
-    expect(formatDateBanner('2025-06-05')).toBe('5 JUN (QUI) - 13h às 17h');
+  it('formats presence-only banner', () => {
+    expect(formatDateBanner('2025-06-05', [])).toBe('5 JUN (QUI) — Presença confirmada');
   });
 });
 

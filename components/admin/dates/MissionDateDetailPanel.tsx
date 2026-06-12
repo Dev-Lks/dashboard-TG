@@ -5,39 +5,53 @@ import { toast } from 'sonner';
 import { FormField } from '@/components/shared/FormField';
 import { DateCapacityIndicator } from './DateCapacityIndicator';
 import { DonationSchedulePreview } from './DonationSchedulePreview';
-import { ProfileSelect } from './ProfileSelect';
-import { donationProfiles, getDonationDayInfo, getSuggestedProfileKey, type DonationProfileKey } from '@/lib/dates/profiles';
+import { ScheduleEditor, type ScheduleEditorValue } from './ScheduleEditor';
+import { formatDayName, formatTimeRangeFromSlots } from '@/lib/dates/schedule-display';
+import { generateTimeSlots } from '@/lib/dates/slot-generator';
 import { createDateAction, updateDateAction, toggleActiveAction, deleteDateAction } from '@/app/admin/datas/actions';
 import type { RegisteredDateInfo } from '@/lib/dates/calendar-utils';
+import type { Mission } from '@/lib/missions/types';
 import { formatDateBR } from '@/lib/date-utils';
 import { useRouter } from 'next/navigation';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 type MissionDateDetailPanelProps = {
   selectedDateStr: string | null;
+  mission: Mission;
   registered?: RegisteredDateInfo & { notes?: string | null };
   initialNotes?: string;
   initialCapacity?: number;
 };
 
+function defaultSchedule(mission: Mission): ScheduleEditorValue {
+  return {
+    mode: mission.default_schedule_mode,
+    start: '07:00',
+    end: '10:00',
+    interval: 30,
+  };
+}
+
 export function MissionDateDetailPanel({
   selectedDateStr,
+  mission,
   registered,
   initialNotes = '',
-  initialCapacity = 15,
+  initialCapacity,
 }: MissionDateDetailPanelProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [capacity, setCapacity] = useState(initialCapacity);
+  const [capacity, setCapacity] = useState(initialCapacity ?? mission.default_capacity);
   const [notes, setNotes] = useState(initialNotes);
-  const [profileKey, setProfileKey] = useState<DonationProfileKey>('generic');
+  const [schedule, setSchedule] = useState<ScheduleEditorValue>(() => defaultSchedule(mission));
 
   useEffect(() => {
-    if (selectedDateStr && !registered) {
-      setProfileKey(getSuggestedProfileKey(selectedDateStr));
+    if (!registered) {
+      setSchedule(defaultSchedule(mission));
+      setCapacity(mission.default_capacity);
     }
-  }, [selectedDateStr, registered]);
+  }, [mission, registered, selectedDateStr]);
 
   if (!selectedDateStr) {
     return (
@@ -47,15 +61,24 @@ export function MissionDateDetailPanel({
     );
   }
 
-  const dayInfo = getDonationDayInfo(selectedDateStr);
   const isEdit = !!registered;
-  const profile = donationProfiles[profileKey];
+  const dayLabel = formatDayName(selectedDateStr);
+  const registeredTimes = registered?.donation_time_slots?.map((s) => s.time) ?? [];
+  const previewTimes = isEdit
+    ? registeredTimes
+    : schedule.mode === 'slots'
+      ? generateTimeSlots(schedule.start, schedule.end, schedule.interval)
+      : [];
 
   const handleCreate = () => {
     startTransition(async () => {
       const fd = new FormData();
+      fd.set('missionId', mission.id);
       fd.set('date', selectedDateStr);
-      fd.set('profileKey', profileKey);
+      fd.set('scheduleMode', schedule.mode);
+      fd.set('scheduleStart', schedule.start);
+      fd.set('scheduleEnd', schedule.end);
+      fd.set('slotInterval', String(schedule.interval));
       fd.set('capacity', String(capacity));
       fd.set('notes', notes);
       const result = await createDateAction(fd);
@@ -114,8 +137,6 @@ export function MissionDateDetailPanel({
     });
   };
 
-  const registeredTimes = registered?.donation_time_slots?.map((s) => s.time) ?? [];
-
   return (
     <>
       <div className="card overflow-hidden">
@@ -124,20 +145,18 @@ export function MissionDateDetailPanel({
             {isEdit ? 'Data cadastrada' : 'Nova data da missão'}
           </div>
           <div className="mt-1 text-lg font-extrabold text-[var(--olive-900)]">{formatDateBR(selectedDateStr)}</div>
-          <div className="text-sm text-[var(--text-muted)]">{dayInfo.dayLabel}</div>
+          <div className="text-sm text-[var(--text-muted)]">{dayLabel} · {mission.name}</div>
         </div>
 
         <div className="space-y-4 p-4">
           {!isEdit && (
-            <ProfileSelect value={profileKey} onChange={setProfileKey} />
+            <ScheduleEditor value={schedule} onChange={setSchedule} />
           )}
 
           <DonationSchedulePreview
-            times={isEdit && registeredTimes.length > 0 ? registeredTimes : profile.times}
-            dayLabel={dayInfo.dayLabel}
-            timeRange={isEdit && registeredTimes.length > 0
-              ? `${registeredTimes[0]} – ${registeredTimes[registeredTimes.length - 1]}`
-              : profile.tableTimeRange}
+            times={previewTimes}
+            dayLabel={dayLabel}
+            timeRange={isEdit ? formatTimeRangeFromSlots(registeredTimes) : undefined}
           />
 
           {isEdit && registered && (
@@ -152,9 +171,9 @@ export function MissionDateDetailPanel({
             <input
               type="number"
               value={capacity}
-              onChange={(e) => setCapacity(Math.min(15, Math.max(1, parseInt(e.target.value) || 15)))}
+              onChange={(e) => setCapacity(Math.min(100, Math.max(1, parseInt(e.target.value) || mission.default_capacity)))}
               min={1}
-              max={15}
+              max={100}
               className="input"
               disabled={isEdit && registered?.is_full}
             />

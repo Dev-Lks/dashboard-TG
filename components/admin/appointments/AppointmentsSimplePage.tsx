@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Search } from 'lucide-react';
 import type { AppointmentRow, AppointmentStats, DateOccupancy, DateRoster, RosterVolunteer } from '@/lib/appointments/queries';
 import { formatDateBR } from '@/lib/date-utils';
-import { getDonationDayInfo } from '@/lib/dates/profiles';
+import { formatDayName, formatDayShortLabel } from '@/lib/dates/schedule-display';
 import { RescheduleDrawer } from './RescheduleDrawer';
 import { CancelAppointmentDialog } from './CancelAppointmentDialog';
 import { ExportPanel } from './ExportPanel';
@@ -177,7 +177,7 @@ export function AppointmentsSimplePage({
     );
   }
 
-  const dayInfo = activeRoster ? getDonationDayInfo(activeRoster.date) : null;
+  const dayLabel = activeRoster ? formatDayName(activeRoster.date) : null;
 
   return (
     <div className="admin-simple">
@@ -214,7 +214,7 @@ export function AppointmentsSimplePage({
       {/* Abas de data */}
       <div className="admin-simple-dates">
         {rosters.map((r) => {
-          const info = getDonationDayInfo(r.date);
+          const shortLabel = formatDayShortLabel(r.date);
           const isActive = r.date === activeRoster?.date;
           const shortDate = formatDateBR(r.date).slice(0, 5);
           return (
@@ -225,7 +225,7 @@ export function AppointmentsSimplePage({
               className={`admin-simple-date-tab ${isActive ? 'admin-simple-date-tab--active' : ''} ${r.is_full ? 'admin-simple-date-tab--full' : ''}`}
             >
               <span className="admin-simple-date-tab-date">{shortDate}</span>
-              <span className="admin-simple-date-tab-day">{info.shortLabel}</span>
+              <span className="admin-simple-date-tab-day">{shortLabel}</span>
               <span className="admin-simple-date-tab-count">{r.booked}/{r.capacity}</span>
             </button>
           );
@@ -239,7 +239,7 @@ export function AppointmentsSimplePage({
             <div>
               <h2 className="admin-simple-panel-title">{formatDateBR(activeRoster.date)}</h2>
               <p className="admin-simple-panel-sub">
-                {dayInfo?.dayLabel} • {dayInfo?.timeRange} •{' '}
+                {dayLabel} •{' '}
                 <strong>{activeRoster.remaining} vagas livres</strong>
                 {activeRoster.is_full && ' • CHEIA'}
               </p>

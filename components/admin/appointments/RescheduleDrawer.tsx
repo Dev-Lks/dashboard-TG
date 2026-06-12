@@ -9,7 +9,7 @@ import { RoleBadge } from './RoleBadge';
 import { rescheduleAppointmentAction } from '@/lib/appointments/actions';
 import type { AppointmentRow, DateOccupancy } from '@/lib/appointments/queries';
 import { formatDateBR } from '@/lib/date-utils';
-import { getDonationDayInfo } from '@/lib/dates/profiles';
+import { formatDayName, formatDayShortLabel } from '@/lib/dates/schedule-display';
 
 type RescheduleDrawerProps = {
   appointment: AppointmentRow | null;
@@ -96,7 +96,8 @@ export function RescheduleDrawer({ appointment, availableDates, open, onClose, o
               <p className="text-sm text-[var(--text-muted)]">Nenhuma data disponível para reagendamento.</p>
             ) : (
               selectableDates.map((d) => {
-                const info = getDonationDayInfo(d.date);
+                const dayLabel = formatDayName(d.date);
+                const shortLabel = formatDayShortLabel(d.date);
                 const isCurrent = d.id === currentDateId;
                 const isFull = d.is_full && !isCurrent;
                 const isSelected = selectedDateId === d.id;
@@ -117,7 +118,7 @@ export function RescheduleDrawer({ appointment, availableDates, open, onClose, o
                   >
                     <div>
                       <div className="font-bold text-[var(--olive-900)]">{formatDateBR(d.date)}</div>
-                      <div className="text-xs text-[var(--text-muted)]">{info.dayLabel}</div>
+                      <div className="text-xs text-[var(--text-muted)]">{dayLabel} ({shortLabel})</div>
                       {isCurrent && <div className="text-xs font-semibold text-[var(--warning)]">Data atual</div>}
                     </div>
                     <CapacityBadge booked={d.booked} capacity={d.capacity} isFull={d.is_full} compact />

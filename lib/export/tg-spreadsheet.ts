@@ -1,12 +1,11 @@
 import ExcelJS from 'exceljs';
-import { format, parseISO } from 'date-fns';
-import { getDonationDayInfo, getProfileTimeRange, type DonationProfileKey } from '@/lib/dates/profiles';
+import { formatDateBanner } from '@/lib/dates/schedule-display';
 import { normalizeRole } from '@/lib/volunteers/roles';
 import { getTurmaFromSeq, getTurmaInfo, type TurmaId } from '@/lib/volunteers/turmas';
 
 export const TG_COLUMNS = ['SEQ', 'GRAD', 'NR', 'NOME', 'NOME GUERRA', 'NASCIMENTO', 'TELEFONE'] as const;
 
-const ROSTER_COLUMNS = ['#', 'NR', 'NOME DE GUERRA', 'NOME COMPLETO', 'HORÁRIO', 'TELEFONE'] as const;
+const ROSTER_COLUMNS = ['#', 'NR', 'NOME DE GUERRA', 'NOME COMPLETO', 'HORÁRIO', 'TELEFONE', 'MISSÃO'] as const;
 const ROSTER_COL_COUNT = ROSTER_COLUMNS.length;
 
 export type ExportVolunteer = {
@@ -22,11 +21,10 @@ export type ExportVolunteer = {
 export type ExportAppointment = {
   created_at: string;
   time: string | null;
+  mission_name?: string | null;
   volunteers: ExportVolunteer | null;
   donation_dates: { date: string } | null;
 };
-
-const MONTHS_PT = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 
 export function toExcelDateSerial(dateStr: string | null | undefined): number | '' {
   if (!dateStr) return '';
@@ -44,13 +42,11 @@ export function formatGradForExport(grad: string | null | undefined): string {
   return (grad || '').toUpperCase();
 }
 
-export function formatDateBanner(dateStr: string): string {
-  const d = parseISO(dateStr);
-  const day = format(d, 'd');
-  const month = MONTHS_PT[d.getMonth()];
-  const info = getDonationDayInfo(dateStr);
-  const time = info.profileKey ? getProfileTimeRange(info.profileKey as DonationProfileKey) : '';
-  return `${day} ${month} (${info.shortLabel}) - ${time}`;
+export function collectTimesForDate(appointments: ExportAppointment[]): string[] {
+  return appointments
+    .map((a) => a.time)
+    .filter((t): t is string => !!t)
+    .sort();
 }
 
 export function filterVolunteersByTurma(volunteers: ExportVolunteer[], turmaId: TurmaId): ExportVolunteer[] {
@@ -115,7 +111,7 @@ function applyVolunteersColumnWidths(ws: ExcelJS.Worksheet) {
 }
 
 function applyRosterColumnWidths(ws: ExcelJS.Worksheet) {
-  const widths = [4, 8, 18, 36, 10, 14];
+  const widths = [4, 8, 18, 36, 10, 14, 20];
   widths.forEach((w, i) => {
     ws.getColumn(i + 1).width = w;
   });
@@ -183,8 +179,9 @@ function appointmentToRosterRow(appt: ExportAppointment, index: number) {
     v.nr,
     v.war_name || '',
     v.full_name,
-    appt.time || '',
+    appt.time || 'Presença',
     v.phone || '',
+    appt.mission_name || '',
   ];
 }
 
@@ -234,9 +231,12 @@ export function addDateRosterSection(
   const confirmed = filterConfirmedAppointments(appointments);
   if (confirmed.length === 0) return rowNum;
 
+  const times = collectTimesForDate(confirmed);
+  const banner = formatDateBanner(dateStr, times);
+
   mergeRow(ws, rowNum);
   const bannerRow = ws.getRow(rowNum);
-  bannerRow.getCell(1).value = `${formatDateBanner(dateStr)}  •  ${confirmed.length} confirmado${confirmed.length !== 1 ? 's' : ''}`;
+  bannerRow.getCell(1).value = `${banner}  •  ${confirmed.length} confirmado${confirmed.length !== 1 ? 's' : ''}`;
   styleDateBannerRow(bannerRow);
   rowNum += 1;
 
@@ -336,5 +336,22 @@ export function buildFullTgWorkbook(
     .sort();
 
   addRosterByDateSheet(wb, appointments, dateOrder);
+  return wb;
+}
+
+export function buildMissionWorkbook(
+  missionName: string,
+  appointments: ExportAppointment[],
+  dates: { date: string; is_active: boolean }[],
+) {
+  const wb = new ExcelJS.Workbook();
+  const byDate = groupAppointmentsByDate(filterConfirmedAppointments(appointments));
+
+  const dateOrder = dates
+    .filter((d) => d.is_active && byDate.has(d.date))
+    .map((d) => d.date)
+    .sort();
+
+  addRosterByDateSheet(wb, appointments, dateOrder, missionName.slice(0, 31));
   return wb;
 }

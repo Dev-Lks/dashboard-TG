@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Download } from 'lucide-react';
 import type { DateRoster } from '@/lib/appointments/queries';
 import { formatDateBR } from '@/lib/date-utils';
-import { getDonationDayInfo } from '@/lib/dates/profiles';
+import { formatDayShortLabel } from '@/lib/dates/schedule-display';
 import { downloadSpreadsheetWithToast } from '@/lib/export/download-spreadsheet';
 import { TURMAS, type TurmaId } from '@/lib/volunteers/turmas';
 
@@ -58,7 +58,7 @@ export function ExportPanel({ rosters, showTurma = true }: ExportPanelProps) {
   return (
     <div className="card admin-export-panel">
       <div className="admin-export-panel-head">
-        <h2 className="admin-export-panel-title">Quem vai doar?</h2>
+        <h2 className="admin-export-panel-title">Quem vai participar?</h2>
         <p className="admin-export-panel-sub">Baixe a lista de agendados por data em Excel (.xlsx)</p>
       </div>
 
@@ -77,13 +77,13 @@ export function ExportPanel({ rosters, showTurma = true }: ExportPanelProps) {
           <h3 className="admin-export-dates-title">Por data</h3>
           <div className="admin-export-dates-list">
             {rosters.map((r) => {
-              const info = getDonationDayInfo(r.date);
+              const shortLabel = formatDayShortLabel(r.date);
               const isLoading = loadingDate === r.date;
               return (
                 <div key={r.id} className="admin-export-date-row">
                   <div className="admin-export-date-info">
                     <div className="admin-export-date-label">
-                      {formatDateBR(r.date)} • {info.shortLabel}
+                      {formatDateBR(r.date)} • {shortLabel}
                     </div>
                     <div className="admin-export-date-meta">
                       {r.booked} confirmado{r.booked !== 1 ? 's' : ''}

@@ -1,41 +1,29 @@
-import { donationProfiles } from '@/lib/dates/profiles';
+import { formatTimeRangeFromSlots } from '@/lib/dates/schedule-display';
 
 type DonationSchedulePreviewProps = {
-  times: readonly string[];
+  times: string[];
   dayLabel: string;
-  timeRange: string;
+  timeRange?: string;
 };
 
-export function DonationSchedulePreview({ times }: DonationSchedulePreviewProps) {
-  return (
-    <div>
-      <div className="flex flex-wrap gap-2">
-        {times.map((t) => (
-          <span
-            key={t}
-            className="rounded border border-[var(--border)] bg-[var(--surface-muted)] px-2 py-1 font-mono text-xs font-bold text-[var(--olive-dark)]"
-          >
-            {t}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
+export function DonationSchedulePreview({ times, dayLabel, timeRange }: DonationSchedulePreviewProps) {
+  const range = timeRange || formatTimeRangeFromSlots(times);
 
-export function ScheduleWindowCards() {
   return (
-    <div className="grid gap-3 sm:grid-cols-3">
-      {(['monday', 'thursday', 'generic'] as const).map((key) => (
-        <div key={key} className="card p-4">
-          <div className="text-xs font-extrabold uppercase tracking-[0.14em] text-[var(--olive-dark)]">
-            {donationProfiles[key].profileLabel}
-          </div>
-          <div className="mt-2 font-mono text-sm font-bold text-[var(--olive)]">
-            {donationProfiles[key].timeRange}
-          </div>
+    <div className="rounded-md border border-[var(--border)] bg-[var(--surface-muted)] p-3">
+      <div className="text-xs font-extrabold uppercase tracking-[0.14em] text-[var(--olive-dark)]">
+        {dayLabel}
+      </div>
+      <div className="mt-1 font-mono text-sm font-bold text-[var(--olive)]">{range}</div>
+      {times.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {times.map((t) => (
+            <span key={t} className="rounded bg-[var(--surface)] px-1.5 py-0.5 font-mono text-[10px] font-bold text-[var(--text-muted)]">
+              {t}
+            </span>
+          ))}
         </div>
-      ))}
+      )}
     </div>
   );
 }

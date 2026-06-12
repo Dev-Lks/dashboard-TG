@@ -4,6 +4,7 @@ import { isAdminAuthenticated } from '@/lib/admin-auth';
 import {
   buildDateOnlyWorkbook,
   buildFullTgWorkbook,
+  buildMissionWorkbook,
   buildTurmaDateWorkbook,
   buildTurmaWorkbook,
   type ExportAppointment,
@@ -13,6 +14,7 @@ import {
   exportFilenameByDate,
   exportFilenameByTurma,
   exportFilenameByTurmaAndDate,
+  exportFilenameByMission,
   exportFilenameFull,
 } from '@/lib/branding';
 import { normalizeRole } from '@/lib/volunteers/roles';
@@ -48,7 +50,23 @@ export async function GET(request: NextRequest) {
 
   const dateFilter = request.nextUrl.searchParams.get('date') || undefined;
   const turmaFilter = request.nextUrl.searchParams.get('turma');
+  const missionSlug = request.nextUrl.searchParams.get('mission');
   const supabase = createServiceRoleClient();
+
+  let missionId: string | null = null;
+  let missionName: string | undefined;
+  if (missionSlug) {
+    const { data: mission } = await supabase
+      .from('missions')
+      .select('id, name')
+      .eq('slug', missionSlug)
+      .maybeSingle();
+    if (!mission) {
+      return NextResponse.json({ error: 'Missão não encontrada' }, { status: 404 });
+    }
+    missionId = mission.id;
+    missionName = mission.name;
+  }
 
   const { data: volunteersRaw } = await supabase
     .from('volunteers')
@@ -64,19 +82,24 @@ export async function GET(request: NextRequest) {
     .select(`
       created_at,
       status,
+      mission_id,
       volunteers (seq, grad, nr, full_name, war_name, birth_date, phone),
       donation_dates (date),
-      donation_time_slots (time)
+      donation_time_slots (time),
+      missions (name)
     `)
     .eq('status', 'confirmed')
     .order('created_at', { ascending: true });
 
+  if (missionId) {
+    appointmentsQuery = appointmentsQuery.eq('mission_id', missionId);
+  }
+
   if (dateFilter) {
-    const { data: dateRow } = await supabase
-      .from('donation_dates')
-      .select('id')
-      .eq('date', dateFilter)
-      .maybeSingle();
+    let dateQuery = supabase.from('donation_dates').select('id').eq('date', dateFilter);
+    if (missionId) dateQuery = dateQuery.eq('mission_id', missionId);
+
+    const { data: dateRow } = await dateQuery.maybeSingle();
 
     if (!dateRow) {
       return NextResponse.json({ error: 'Data não encontrada' }, { status: 404 });
@@ -94,9 +117,12 @@ export async function GET(request: NextRequest) {
     const d = Array.isArray(dates) ? dates[0] : dates;
     const slots = a.donation_time_slots as { time: string } | { time: string }[] | null;
     const slot = Array.isArray(slots) ? slots[0] : slots;
+    const missions = a.missions as { name: string } | { name: string }[] | null;
+    const mission = Array.isArray(missions) ? missions[0] : missions;
     return {
       created_at: a.created_at,
       time: slot?.time ?? null,
+      mission_name: mission?.name ?? missionName ?? null,
       volunteers: mapVolunteer(v),
       donation_dates: d ?? null,
     };
@@ -111,14 +137,23 @@ export async function GET(request: NextRequest) {
     }
     if (dateFilter) {
       wb = buildTurmaDateWorkbook(turmaFilter, dateFilter, appointments);
-      filename = exportFilenameByTurmaAndDate(turmaFilter, dateFilter);
+      filename = exportFilenameByTurmaAndDate(turmaFilter, dateFilter, missionName);
     } else {
       wb = buildTurmaWorkbook(turmaFilter, volunteers);
       filename = exportFilenameByTurma(turmaFilter);
     }
   } else if (dateFilter) {
     wb = buildDateOnlyWorkbook(dateFilter, appointments);
-    filename = exportFilenameByDate(dateFilter);
+    filename = exportFilenameByDate(missionName, dateFilter);
+  } else if (missionId && missionName) {
+    const { data: dates } = await supabase
+      .from('donation_dates')
+      .select('date, is_active')
+      .eq('mission_id', missionId)
+      .order('date', { ascending: true });
+
+    wb = buildMissionWorkbook(missionName, appointments, dates || []);
+    filename = exportFilenameByMission(missionName);
   } else {
     const { data: dates } = await supabase
       .from('donation_dates')
