@@ -5,7 +5,7 @@ import { PublicShell } from '@/components/layout/PublicShell';
 export default function LandingPage() {
   return (
     <PublicShell>
-      <section className="mission-panel -mx-4 px-4 py-8 sm:mx-0 sm:rounded-lg sm:px-8 sm:py-10">
+      <section className="mission-panel rounded-lg px-5 py-8 sm:px-8 sm:py-10">
         <div className="max-w-3xl">
           <h1 className="text-3xl font-extrabold tracking-tight sm:text-5xl">Missão: Doação de Sangue</h1>
           <p className="mt-2 text-base font-semibold text-[var(--sand)] sm:text-lg">TG 11 — Tiro de Guerra de Ituiutaba/MG</p>

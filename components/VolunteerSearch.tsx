@@ -35,7 +35,7 @@ export function VolunteerSearch({ onSelect, isLoading, setIsLoading }: Props) {
 
   return (
     <div>
-      <form onSubmit={handleSearch} className="grid gap-3 sm:grid-cols-[1fr,140px]">
+      <form onSubmit={handleSearch} className="grid items-center gap-3 sm:grid-cols-[1fr,auto]">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
           <input
@@ -43,7 +43,7 @@ export function VolunteerSearch({ onSelect, isLoading, setIsLoading }: Props) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Digite NR, nome de guerra ou nome completo"
-            className="input pl-11"
+            className="input input-has-icon"
             disabled={isLoading}
             autoComplete="name"
           />
@@ -51,7 +51,7 @@ export function VolunteerSearch({ onSelect, isLoading, setIsLoading }: Props) {
         <button 
           type="submit" 
           disabled={isLoading || query.trim().length < 2}
-          className="btn btn-primary px-8 disabled:opacity-60"
+          className="btn btn-auto btn-primary px-8 disabled:opacity-60"
         >
           Buscar
         </button>

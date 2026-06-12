@@ -201,6 +201,10 @@ body::selection {
   color: var(--tactical-light);
 }
 
+.input-has-icon {
+  padding-left: 2.75rem;
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;
