@@ -367,13 +367,80 @@ body::selection {
 /* Command panel elements */
 .command-header {
   background-color: var(--surface-command);
-  color: var(--text);
+  color: var(--text-inverse);
   border-bottom: 2px solid var(--olive);
+}
+
+.command-header-title {
+  color: var(--text-inverse);
+}
+
+.command-header-subtitle {
+  color: var(--sand);
+}
+
+.command-nav-link {
+  color: var(--sand-light);
+}
+
+.command-nav-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-inverse);
+}
+
+.command-nav-link--active {
+  background: var(--sand-light);
+  color: var(--olive-900);
+}
+
+.command-header-action {
+  border: 1px solid rgba(244, 241, 233, 0.35);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-inverse);
+}
+
+.command-header-action:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--text-inverse);
 }
 
 [data-theme="dark"] .command-header {
   background-color: var(--surface);
+  color: var(--text);
   border-bottom: 1px solid var(--border);
+}
+
+[data-theme="dark"] .command-header-title {
+  color: var(--olive-900);
+}
+
+[data-theme="dark"] .command-header-subtitle {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .command-nav-link {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .command-nav-link:hover {
+  background: var(--surface-muted);
+  color: var(--text);
+}
+
+[data-theme="dark"] .command-nav-link--active {
+  background: var(--surface-muted);
+  color: var(--olive-900);
+}
+
+[data-theme="dark"] .command-header-action {
+  border-color: var(--border);
+  background: var(--surface-muted);
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .command-header-action:hover {
+  background: var(--surface-raised);
+  color: var(--text);
 }
 
 .metric-card {

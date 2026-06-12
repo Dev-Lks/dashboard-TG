@@ -20,15 +20,26 @@ export function applyTheme(theme: Theme) {
   root.style.colorScheme = theme;
 }
 
-export function ThemeToggle() {
+type ThemeToggleProps = {
+  variant?: 'default' | 'command';
+};
+
+const buttonBase = 'flex h-9 w-9 items-center justify-center rounded transition-colors';
+
+const variantClasses = {
+  default:
+    'border border-[var(--border)] bg-[var(--surface)] text-[var(--olive-dark)] hover:bg-[var(--surface-muted)]',
+  command: 'command-header-action',
+};
+
+export function ThemeToggle({ variant = 'default' }: ThemeToggleProps) {
   const [theme, setTheme] = useState<Theme>('light');
-  const [mounted, setMounted] = useState(false);
+  const classes = `${buttonBase} ${variantClasses[variant]}`;
 
   useEffect(() => {
     const initial = getPreferredTheme();
     setTheme(initial);
     applyTheme(initial);
-    setMounted(true);
   }, []);
 
   function toggle() {
@@ -38,25 +49,12 @@ export function ThemeToggle() {
     applyTheme(next);
   }
 
-  if (!mounted) {
-    return (
-      <button
-        type="button"
-        className="flex h-9 w-9 items-center justify-center rounded border border-[var(--border)] text-[var(--text-muted)]"
-        aria-label="Alternar tema"
-        disabled
-      >
-        <Sun className="h-4 w-4" />
-      </button>
-    );
-  }
-
   return (
     <button
       type="button"
       onClick={toggle}
-      className="flex h-9 w-9 items-center justify-center rounded border border-[var(--border)] bg-[var(--surface)] text-[var(--olive-dark)] hover:bg-[var(--surface-muted)]"
-      aria-label={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
+      className={classes}
+      aria-label="Alternar tema"
     >
       {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
     </button>

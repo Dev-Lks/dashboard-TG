@@ -6,6 +6,9 @@ import { getTurmaFromSeq, getTurmaInfo, type TurmaId } from '@/lib/volunteers/tu
 
 export const TG_COLUMNS = ['SEQ', 'GRAD', 'NR', 'NOME', 'NOME GUERRA', 'NASCIMENTO', 'TELEFONE'] as const;
 
+const ROSTER_COLUMNS = ['#', 'NR', 'NOME DE GUERRA', 'NOME COMPLETO', 'HORÁRIO', 'TELEFONE'] as const;
+const ROSTER_COL_COUNT = ROSTER_COLUMNS.length;
+
 export type ExportVolunteer = {
   seq: number | null;
   grad: string | null;
@@ -18,6 +21,7 @@ export type ExportVolunteer = {
 
 export type ExportAppointment = {
   created_at: string;
+  time: string | null;
   volunteers: ExportVolunteer | null;
   donation_dates: { date: string } | null;
 };
@@ -60,15 +64,58 @@ export function filterAppointmentsByTurma(appointments: ExportAppointment[], tur
   });
 }
 
-function applyMonAtdrColumnWidths(ws: ExcelJS.Worksheet) {
-  const widths = [4.43, 13.57, 9.43, 47, 18.43, 16.43, 17.57];
+export function filterConfirmedAppointments(appointments: ExportAppointment[]): ExportAppointment[] {
+  return appointments.filter((a) => {
+    const role = normalizeRole(a.volunteers?.grad);
+    return role === 'monitor' || role === 'atirador';
+  });
+}
+
+export function sortAppointmentsByWarName(appointments: ExportAppointment[]): ExportAppointment[] {
+  return [...appointments].sort((a, b) => {
+    const nameA = a.volunteers?.war_name || a.volunteers?.full_name || '';
+    const nameB = b.volunteers?.war_name || b.volunteers?.full_name || '';
+    return nameA.localeCompare(nameB, 'pt-BR');
+  });
+}
+
+export function splitByRole(appointments: ExportAppointment[]) {
+  const monitors: ExportAppointment[] = [];
+  const atiradores: ExportAppointment[] = [];
+
+  for (const appt of appointments) {
+    const role = normalizeRole(appt.volunteers?.grad);
+    if (role === 'monitor') monitors.push(appt);
+    else if (role === 'atirador') atiradores.push(appt);
+    else if (appt.volunteers) atiradores.push(appt);
+  }
+
+  return {
+    monitors: sortAppointmentsByWarName(monitors),
+    atiradores: sortAppointmentsByWarName(atiradores),
+  };
+}
+
+export function groupAppointmentsByDate(appointments: ExportAppointment[]): Map<string, ExportAppointment[]> {
+  const byDate = new Map<string, ExportAppointment[]>();
+  for (const appt of appointments) {
+    const d = appt.donation_dates?.date;
+    if (!d) continue;
+    if (!byDate.has(d)) byDate.set(d, []);
+    byDate.get(d)!.push(appt);
+  }
+  return byDate;
+}
+
+function applyVolunteersColumnWidths(ws: ExcelJS.Worksheet) {
+  const widths = [4.43, 11.43, 4.86, 39.71, 13.14, 11.14, 13.71];
   widths.forEach((w, i) => {
     ws.getColumn(i + 1).width = w;
   });
 }
 
-function applyVolunteersColumnWidths(ws: ExcelJS.Worksheet) {
-  const widths = [4.43, 11.43, 4.86, 39.71, 13.14, 11.14, 13.71];
+function applyRosterColumnWidths(ws: ExcelJS.Worksheet) {
+  const widths = [4, 8, 18, 36, 10, 14];
   widths.forEach((w, i) => {
     ws.getColumn(i + 1).width = w;
   });
@@ -105,6 +152,18 @@ function styleDateBannerRow(row: ExcelJS.Row) {
   });
 }
 
+function styleRoleSectionRow(row: ExcelJS.Row) {
+  row.font = { bold: true, size: 11 };
+  row.alignment = { vertical: 'middle', horizontal: 'left' };
+  row.eachCell((cell) => {
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFF0F0F0' },
+    };
+  });
+}
+
 function volunteerToRow(v: ExportVolunteer, seq: number | string) {
   return [
     seq,
@@ -117,47 +176,95 @@ function volunteerToRow(v: ExportVolunteer, seq: number | string) {
   ];
 }
 
-function addColumnHeaderRow(ws: ExcelJS.Worksheet, rowNum: number, birthLabel: 'NASCIMENTO' | 'DATA DE NASCIMENTO' = 'NASCIMENTO') {
-  const headers = ['SEQ', 'GRAD', 'NR', 'NOME', 'NOME GUERRA', birthLabel, 'TELEFONE'];
+function appointmentToRosterRow(appt: ExportAppointment, index: number) {
+  const v = appt.volunteers!;
+  return [
+    index,
+    v.nr,
+    v.war_name || '',
+    v.full_name,
+    appt.time || '',
+    v.phone || '',
+  ];
+}
+
+function mergeRow(ws: ExcelJS.Worksheet, rowNum: number) {
+  const lastCol = String.fromCharCode(64 + ROSTER_COL_COUNT);
+  ws.mergeCells(`A${rowNum}:${lastCol}${rowNum}`);
+}
+
+function addRosterColumnHeaderRow(ws: ExcelJS.Worksheet, rowNum: number): number {
   const row = ws.getRow(rowNum);
-  row.values = headers;
+  row.values = [...ROSTER_COLUMNS];
   styleHeaderRow(row);
   return rowNum + 1;
 }
 
-function addDateSection(
+function addRoleGroup(
+  ws: ExcelJS.Worksheet,
+  rowNum: number,
+  title: string,
+  appointments: ExportAppointment[],
+): number {
+  if (appointments.length === 0) return rowNum;
+
+  mergeRow(ws, rowNum);
+  const sectionRow = ws.getRow(rowNum);
+  sectionRow.getCell(1).value = `${title} (${appointments.length})`;
+  styleRoleSectionRow(sectionRow);
+  rowNum += 1;
+
+  rowNum = addRosterColumnHeaderRow(ws, rowNum);
+
+  appointments.forEach((appt, i) => {
+    if (!appt.volunteers) return;
+    ws.getRow(rowNum).values = appointmentToRosterRow(appt, i + 1);
+    rowNum += 1;
+  });
+
+  return rowNum + 1;
+}
+
+export function addDateRosterSection(
   ws: ExcelJS.Worksheet,
   rowNum: number,
   dateStr: string,
   appointments: ExportAppointment[],
-  startSeq: number,
 ): number {
-  ws.mergeCells(`A${rowNum}:G${rowNum}`);
+  const confirmed = filterConfirmedAppointments(appointments);
+  if (confirmed.length === 0) return rowNum;
+
+  mergeRow(ws, rowNum);
   const bannerRow = ws.getRow(rowNum);
-  bannerRow.getCell(1).value = formatDateBanner(dateStr);
+  bannerRow.getCell(1).value = `${formatDateBanner(dateStr)}  •  ${confirmed.length} confirmado${confirmed.length !== 1 ? 's' : ''}`;
   styleDateBannerRow(bannerRow);
   rowNum += 1;
 
-  rowNum = addColumnHeaderRow(ws, rowNum, 'NASCIMENTO');
-
-  let seq = startSeq;
-  const sorted = [...appointments].sort(
-    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-  );
-
-  for (const appt of sorted) {
-    const v = appt.volunteers;
-    if (!v) continue;
-    const role = normalizeRole(v.grad);
-    if (!role) continue;
-
-    const row = ws.getRow(rowNum);
-    row.values = volunteerToRow(v, seq);
-    rowNum += 1;
-    seq += 1;
-  }
+  const { monitors, atiradores } = splitByRole(confirmed);
+  rowNum = addRoleGroup(ws, rowNum, 'MONITORES', monitors);
+  rowNum = addRoleGroup(ws, rowNum, 'ATIRADORES', atiradores);
 
   return rowNum;
+}
+
+export function addRosterByDateSheet(
+  wb: ExcelJS.Workbook,
+  appointments: ExportAppointment[],
+  dateOrder: string[],
+  sheetName = 'POR DATA',
+) {
+  const ws = wb.addWorksheet(sheetName);
+  const byDate = groupAppointmentsByDate(filterConfirmedAppointments(appointments));
+
+  let rowNum = 1;
+  for (const dateStr of dateOrder) {
+    const appts = byDate.get(dateStr) || [];
+    if (appts.length === 0) continue;
+    rowNum = addDateRosterSection(ws, rowNum, dateStr, appts);
+  }
+
+  applyRosterColumnWidths(ws);
+  return ws;
 }
 
 export function buildVolunteersMasterRows(volunteers: ExportVolunteer[]) {
@@ -172,73 +279,11 @@ export function buildVolunteersMasterRows(volunteers: ExportVolunteer[]) {
   return sorted.map((v, i) => volunteerToRow(v, v.seq ?? i + 1));
 }
 
-export function addMonAtdrFlatSheet(
-  wb: ExcelJS.Workbook,
-  appointments: ExportAppointment[],
-) {
-  const ws = wb.addWorksheet('Mon e Atdr');
-  let rowNum = addColumnHeaderRow(ws, 1, 'DATA DE NASCIMENTO');
-
-  const confirmed = appointments
-    .filter((a) => {
-      const role = normalizeRole(a.volunteers?.grad);
-      return role === 'monitor' || role === 'atirador';
-    })
-    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-
-  confirmed.forEach((appt, i) => {
-    const v = appt.volunteers!;
-    const row = ws.getRow(rowNum);
-    row.values = volunteerToRow(v, i + 1);
-    rowNum += 1;
-  });
-
-  applyMonAtdrColumnWidths(ws);
-  ws.views = [{ state: 'frozen', ySplit: 1 }];
-}
-
-export function addVolunteersSheetWithDateSections(
-  wb: ExcelJS.Workbook,
-  volunteers: ExportVolunteer[],
-  appointmentsByDate: Map<string, ExportAppointment[]>,
-  dateOrder: string[],
-) {
-  const ws = wb.addWorksheet('VOLUNTÁRIOS');
-
-  const headerRow = ws.getRow(1);
-  headerRow.values = ['SEQ', 'GRAD', 'NR', 'NOME', 'NOME GUERRA', 'DATA DE NASCIMENTO', 'TELEFONE'];
-  styleHeaderRow(headerRow);
-
-  let rowNum = 2;
-  for (const values of buildVolunteersMasterRows(volunteers)) {
-    ws.getRow(rowNum).values = values;
-    rowNum += 1;
-  }
-
-  let globalSeq = 1;
-  for (const dateStr of dateOrder) {
-    const appts = appointmentsByDate.get(dateStr) || [];
-    const confirmed = appts.filter((a) => {
-      const role = normalizeRole(a.volunteers?.grad);
-      return role === 'monitor' || role === 'atirador';
-    });
-    if (confirmed.length === 0) continue;
-
-    rowNum = addDateSection(ws, rowNum, dateStr, confirmed, globalSeq);
-    globalSeq += confirmed.length;
-  }
-
-  applyVolunteersColumnWidths(ws);
-}
-
 export function buildDateOnlyWorkbook(dateStr: string, appointments: ExportAppointment[]) {
   const wb = new ExcelJS.Workbook();
-  const ws = wb.addWorksheet('Mon e Atdr');
-
-  let rowNum = 1;
-  rowNum = addDateSection(ws, rowNum, dateStr, appointments, 1);
-
-  applyMonAtdrColumnWidths(ws);
+  const ws = wb.addWorksheet('POR DATA');
+  addDateRosterSection(ws, 1, dateStr, appointments);
+  applyRosterColumnWidths(ws);
   return wb;
 }
 
@@ -273,38 +318,23 @@ export function buildTurmaDateWorkbook(
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet(`${turma.label} ${dateStr}`);
 
-  addDateSection(ws, 1, dateStr, filtered, 1);
-  applyMonAtdrColumnWidths(ws);
+  addDateRosterSection(ws, 1, dateStr, filtered);
+  applyRosterColumnWidths(ws);
   return wb;
 }
 
 export function buildFullTgWorkbook(
-  volunteers: ExportVolunteer[],
   appointments: ExportAppointment[],
   dates: { date: string; is_active: boolean }[],
 ) {
   const wb = new ExcelJS.Workbook();
-
-  const confirmed = appointments.filter((a) => {
-    const role = normalizeRole(a.volunteers?.grad);
-    return role === 'monitor' || role === 'atirador';
-  });
-
-  const byDate = new Map<string, ExportAppointment[]>();
-  for (const appt of confirmed) {
-    const d = appt.donation_dates?.date;
-    if (!d) continue;
-    if (!byDate.has(d)) byDate.set(d, []);
-    byDate.get(d)!.push(appt);
-  }
+  const byDate = groupAppointmentsByDate(filterConfirmedAppointments(appointments));
 
   const dateOrder = dates
     .filter((d) => d.is_active && byDate.has(d.date))
     .map((d) => d.date)
     .sort();
 
-  addVolunteersSheetWithDateSections(wb, volunteers, byDate, dateOrder);
-  addMonAtdrFlatSheet(wb, confirmed);
-
+  addRosterByDateSheet(wb, appointments, dateOrder);
   return wb;
 }

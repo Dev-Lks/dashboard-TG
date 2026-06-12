@@ -26,10 +26,8 @@ export function AdminNav() {
           <Link
             key={item.href}
             href={item.href}
-            className={`flex min-h-10 shrink-0 items-center gap-2 rounded px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] transition-colors ${
-              isActive
-                ? 'bg-[var(--surface-muted)] text-[var(--olive-900)]'
-                : 'text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]'
+            className={`command-nav-link flex min-h-10 shrink-0 items-center gap-2 rounded px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] transition-colors ${
+              isActive ? 'command-nav-link--active' : ''
             }`}
             aria-current={isActive ? 'page' : undefined}
           >

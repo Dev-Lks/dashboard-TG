@@ -58,8 +58,8 @@ export function ExportPanel({ rosters, showTurma = true }: ExportPanelProps) {
   return (
     <div className="card admin-export-panel">
       <div className="admin-export-panel-head">
-        <h2 className="admin-export-panel-title">Exportar planilhas</h2>
-        <p className="admin-export-panel-sub">Excel (.xlsx) por data, turma ou completo</p>
+        <h2 className="admin-export-panel-title">Quem vai doar?</h2>
+        <p className="admin-export-panel-sub">Baixe a lista de agendados por data em Excel (.xlsx)</p>
       </div>
 
       <button
@@ -69,33 +69,8 @@ export function ExportPanel({ rosters, showTurma = true }: ExportPanelProps) {
         className="btn btn-primary btn-block admin-export-full-btn"
       >
         <Download className="h-5 w-5" aria-hidden="true" />
-        {loadingFull ? 'Baixando...' : 'Baixar planilha completa'}
+        {loadingFull ? 'Baixando...' : 'Baixar todos os agendados'}
       </button>
-
-      {showTurma && (
-        <div className="admin-export-dates">
-          <h3 className="admin-export-dates-title">Por turma (efetivo)</h3>
-          <div className="admin-export-dates-list">
-            {TURMAS.map((t) => (
-              <div key={t.id} className="admin-export-date-row">
-                <div className="admin-export-date-info">
-                  <div className="admin-export-date-label">{t.label} — {t.name}</div>
-                  <div className="admin-export-date-meta">SEQ {t.min}–{t.max}</div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleTurmaExport(t.id)}
-                  disabled={loadingTurma === t.id}
-                  className="btn btn-secondary btn-block admin-export-date-btn"
-                >
-                  <Download className="h-4 w-4" aria-hidden="true" />
-                  {loadingTurma === t.id ? 'Baixando...' : 'Baixar'}
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {rosters.length > 0 && (
         <div className="admin-export-dates">
@@ -147,6 +122,31 @@ export function ExportPanel({ rosters, showTurma = true }: ExportPanelProps) {
             })}
           </div>
         </div>
+      )}
+
+      {showTurma && (
+        <details className="admin-export-dates">
+          <summary className="admin-export-dates-title cursor-pointer">Por turma (efetivo cadastrado)</summary>
+          <div className="admin-export-dates-list mt-3">
+            {TURMAS.map((t) => (
+              <div key={t.id} className="admin-export-date-row">
+                <div className="admin-export-date-info">
+                  <div className="admin-export-date-label">{t.label} — {t.name}</div>
+                  <div className="admin-export-date-meta">SEQ {t.min}–{t.max}</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleTurmaExport(t.id)}
+                  disabled={loadingTurma === t.id}
+                  className="btn btn-secondary btn-block admin-export-date-btn"
+                >
+                  <Download className="h-4 w-4" aria-hidden="true" />
+                  {loadingTurma === t.id ? 'Baixando...' : 'Baixar'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </details>
       )}
     </div>
   );

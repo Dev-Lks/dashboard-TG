@@ -9,8 +9,14 @@ import {
   type ExportAppointment,
   type ExportVolunteer,
 } from '@/lib/export/tg-spreadsheet';
+import {
+  exportFilenameByDate,
+  exportFilenameByTurma,
+  exportFilenameByTurmaAndDate,
+  exportFilenameFull,
+} from '@/lib/branding';
 import { normalizeRole } from '@/lib/volunteers/roles';
-import { TURMAS, type TurmaId } from '@/lib/volunteers/turmas';
+import { type TurmaId } from '@/lib/volunteers/turmas';
 
 type VolunteerRecord = ExportVolunteer & { id?: string };
 
@@ -59,7 +65,8 @@ export async function GET(request: NextRequest) {
       created_at,
       status,
       volunteers (seq, grad, nr, full_name, war_name, birth_date, phone),
-      donation_dates (date)
+      donation_dates (date),
+      donation_time_slots (time)
     `)
     .eq('status', 'confirmed')
     .order('created_at', { ascending: true });
@@ -85,8 +92,11 @@ export async function GET(request: NextRequest) {
     const v = Array.isArray(vol) ? vol[0] : vol;
     const dates = a.donation_dates as { date: string } | { date: string }[] | null;
     const d = Array.isArray(dates) ? dates[0] : dates;
+    const slots = a.donation_time_slots as { time: string } | { time: string }[] | null;
+    const slot = Array.isArray(slots) ? slots[0] : slots;
     return {
       created_at: a.created_at,
+      time: slot?.time ?? null,
       volunteers: mapVolunteer(v),
       donation_dates: d ?? null,
     };
@@ -99,26 +109,24 @@ export async function GET(request: NextRequest) {
     if (!isTurmaId(turmaFilter)) {
       return NextResponse.json({ error: 'Turma inválida' }, { status: 400 });
     }
-    const turma = TURMAS.find((t) => t.id === turmaFilter)!;
-
     if (dateFilter) {
       wb = buildTurmaDateWorkbook(turmaFilter, dateFilter, appointments);
-      filename = `TG11-${turma.label}-${turma.name}-${dateFilter}.xlsx`;
+      filename = exportFilenameByTurmaAndDate(turmaFilter, dateFilter);
     } else {
       wb = buildTurmaWorkbook(turmaFilter, volunteers);
-      filename = `TG11-${turma.label}-${turma.name}-efetivo.xlsx`;
+      filename = exportFilenameByTurma(turmaFilter);
     }
   } else if (dateFilter) {
     wb = buildDateOnlyWorkbook(dateFilter, appointments);
-    filename = `TG11-doacao-${dateFilter}.xlsx`;
+    filename = exportFilenameByDate(dateFilter);
   } else {
     const { data: dates } = await supabase
       .from('donation_dates')
       .select('date, is_active')
       .order('date', { ascending: true });
 
-    wb = buildFullTgWorkbook(volunteers, appointments, dates || []);
-    filename = `TG 11-002 DOAÇÃO DE SANGUE-${new Date().toISOString().slice(0, 10)}.xlsx`;
+    wb = buildFullTgWorkbook(appointments, dates || []);
+    filename = exportFilenameFull();
   }
 
   const buffer = await wb.xlsx.writeBuffer();

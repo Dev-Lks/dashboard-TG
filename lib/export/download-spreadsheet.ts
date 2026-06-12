@@ -1,5 +1,11 @@
 import { toast } from 'sonner';
 import type { TurmaId } from '@/lib/volunteers/turmas';
+import {
+  exportFilenameByDate,
+  exportFilenameByTurma,
+  exportFilenameByTurmaAndDate,
+  exportFilenameFull,
+} from '@/lib/branding';
 
 type DownloadSpreadsheetOptions = {
   date?: string;
@@ -16,11 +22,11 @@ function buildUrl(options?: DownloadSpreadsheetOptions): string {
 
 function getFilename(options?: DownloadSpreadsheetOptions): string {
   if (options?.date && options?.turma) {
-    return `TG11-${options.turma}-${options.date}.xlsx`;
+    return exportFilenameByTurmaAndDate(options.turma, options.date);
   }
-  if (options?.date) return `TG11-doacao-${options.date}.xlsx`;
-  if (options?.turma) return `TG11-${options.turma}-efetivo.xlsx`;
-  return `TG 11-002 DOAÇÃO DE SANGUE-${new Date().toISOString().slice(0, 10)}.xlsx`;
+  if (options?.date) return exportFilenameByDate(options.date);
+  if (options?.turma) return exportFilenameByTurma(options.turma);
+  return exportFilenameFull();
 }
 
 export async function downloadSpreadsheet(options?: DownloadSpreadsheetOptions): Promise<void> {
