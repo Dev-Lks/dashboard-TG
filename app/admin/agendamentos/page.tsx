@@ -5,7 +5,6 @@ import {
   getDateOccupancy,
   getActiveDatesRoster,
 } from '@/lib/appointments/queries';
-import { ExportButton } from './_components/ExportButton';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AppointmentsSimplePage } from '@/components/admin/appointments/AppointmentsSimplePage';
 import { AppointmentList } from '@/components/admin/appointments/AppointmentList';
@@ -46,7 +45,6 @@ export default async function AdminAppointmentsPage({
         <AdminPageHeader
           eyebrow="Doação de sangue"
           title="Quem vai doar?"
-          action={<ExportButton />}
         />
         <AppointmentsSimplePage
           rosters={rosters}

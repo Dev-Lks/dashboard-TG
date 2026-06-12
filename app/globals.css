@@ -889,6 +889,81 @@ body::selection {
   font-weight: 700;
 }
 
+/* Export panel (Agendamentos) */
+.admin-export-panel {
+  margin-bottom: 1.25rem;
+  padding: 1.25rem;
+}
+
+.admin-export-panel-head {
+  margin-bottom: 1rem;
+}
+
+.admin-export-panel-title {
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: var(--olive-900);
+}
+
+.admin-export-panel-sub {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.admin-export-full-btn {
+  margin-bottom: 1.25rem;
+}
+
+.admin-export-dates-title {
+  margin-bottom: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--olive-dark);
+}
+
+.admin-export-dates-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.admin-export-date-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-raised);
+}
+
+@media (min-width: 640px) {
+  .admin-export-date-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .admin-export-date-btn {
+    width: auto;
+    min-width: 8rem;
+  }
+}
+
+.admin-export-date-label {
+  font-weight: 800;
+  color: var(--olive-900);
+}
+
+.admin-export-date-meta {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
 .admin-simple-advanced {
   margin-top: 1.5rem;
   padding: 1rem;

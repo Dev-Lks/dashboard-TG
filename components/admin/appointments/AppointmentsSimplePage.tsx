@@ -8,7 +8,7 @@ import { formatDateBR } from '@/lib/date-utils';
 import { getDonationDayInfo } from '@/lib/dates/profiles';
 import { RescheduleDrawer } from './RescheduleDrawer';
 import { CancelAppointmentDialog } from './CancelAppointmentDialog';
-import { ExportDateButton } from './ExportDateButton';
+import { ExportPanel } from './ExportPanel';
 import { EmptyState } from '@/components/shared/EmptyState';
 
 type AppointmentsSimplePageProps = {
@@ -181,6 +181,8 @@ export function AppointmentsSimplePage({
 
   return (
     <div className="admin-simple">
+      <ExportPanel rosters={rosters} />
+
       {/* Resumo rápido */}
       <div className="admin-simple-summary">
         <div className="admin-simple-stat">
@@ -242,7 +244,6 @@ export function AppointmentsSimplePage({
                 {activeRoster.is_full && ' • CHEIA'}
               </p>
             </div>
-            <ExportDateButton date={activeRoster.date} />
           </div>
 
           <VolunteerTable
