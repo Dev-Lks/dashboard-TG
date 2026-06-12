@@ -8,6 +8,7 @@ import {
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AppointmentsSimplePage } from '@/components/admin/appointments/AppointmentsSimplePage';
 import { AppointmentList } from '@/components/admin/appointments/AppointmentList';
+import { UNIT_ID } from '@/lib/branding';
 
 export default async function AdminAppointmentsPage({
   searchParams,
@@ -43,7 +44,7 @@ export default async function AdminAppointmentsPage({
     return (
       <div>
         <AdminPageHeader
-          eyebrow="Doação de sangue"
+          eyebrow={UNIT_ID}
           title="Quem vai doar?"
         />
         <AppointmentsSimplePage
@@ -63,7 +64,7 @@ export default async function AdminAppointmentsPage({
   return (
     <div>
       <AdminPageHeader
-        eyebrow="Doação de sangue"
+        eyebrow={UNIT_ID}
         title="Agendamentos cancelados"
         action={
           <a href="/admin/agendamentos" className="btn btn-secondary">

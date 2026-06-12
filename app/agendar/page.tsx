@@ -9,11 +9,17 @@ import { VolunteerConfirmCard } from '@/components/VolunteerConfirmCard';
 import { DateAvailabilityCard } from '@/components/DateAvailabilityCard';
 import { TimeSlotPicker } from '@/components/TimeSlotPicker';
 import { SuccessCard } from '@/components/SuccessCard';
+import {
+  AppointmentDetailsCard,
+  LookupCardFooter,
+  type AppointmentDetails,
+} from '@/components/AppointmentDetailsCard';
 import { PublicShell } from '@/components/layout/PublicShell';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { formatDateBR } from '@/lib/date-utils';
+import { UNIT_ID } from '@/lib/branding';
 
-type Step = 'search' | 'confirm' | 'pick-date' | 'pick-time' | 'success';
+type Step = 'search' | 'confirm' | 'pick-date' | 'pick-time' | 'success' | 'already-booked';
 
 const steps: { id: Step; label: string }[] = [
   { id: 'search', label: 'Identificar' },
@@ -33,9 +39,11 @@ export default function AgendarPage() {
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [verificationToken, setVerificationToken] = useState<string | null>(null);
-  const [successData, setSuccessData] = useState<any>(null);
+  const [successData, setSuccessData] = useState<AppointmentDetails | null>(null);
+  const [existingAppointment, setExistingAppointment] = useState<AppointmentDetails | null>(null);
 
   const currentIndex = Math.max(0, steps.findIndex((s) => s.id === step));
+  const showProgress = step !== 'already-booked';
 
   function handleVolunteerSelect(v: Volunteer) {
     setVolunteer(v);
@@ -45,6 +53,7 @@ export default function AgendarPage() {
   function backToSearch() {
     setVolunteer(null);
     setVerificationToken(null);
+    setExistingAppointment(null);
     setSelectedDate(null);
     setSelectedTime(null);
     setSelectedSlotId(null);
@@ -56,6 +65,24 @@ export default function AgendarPage() {
     setVerificationToken(token);
     setIsLoading(true);
     try {
+      const mineRes = await fetch('/api/appointments/mine', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ volunteerId: volunteer.id, verificationToken: token }),
+      });
+      const mineData = await mineRes.json();
+
+      if (!mineRes.ok) {
+        toast.error(mineData.error || 'Erro ao verificar agendamento existente');
+        return;
+      }
+
+      if (mineData.appointment) {
+        setExistingAppointment(mineData.appointment);
+        setStep('already-booked');
+        return;
+      }
+
       const res = await fetch('/api/dates/available');
       const data = await res.json();
       setAvailableDates(data.dates || []);
@@ -154,9 +181,11 @@ export default function AgendarPage() {
             <ArrowLeft className="h-4 w-4" />
             Voltar
           </button>
-          <h1 className="text-2xl font-extrabold tracking-tight text-[var(--olive-900)] sm:text-3xl">Agendar doação</h1>
+          <div className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--olive-dark)]">{UNIT_ID}</div>
+          <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-[var(--olive-900)] sm:text-3xl">Agendar doação</h1>
         </div>
 
+        {showProgress && (
         <div className="mb-5">
           {/* Mobile: single progress bar + step label */}
           <div className="sm:hidden" role="group" aria-label="Progresso do agendamento">
@@ -187,6 +216,7 @@ export default function AgendarPage() {
             ))}
           </div>
         </div>
+        )}
 
         {isLoading && step !== 'search' && (
           <div className="mb-4 flex items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm font-semibold text-[var(--text-muted)]">
@@ -260,6 +290,14 @@ export default function AgendarPage() {
 
         {step === 'success' && successData && (
           <SuccessCard {...successData} />
+        )}
+
+        {step === 'already-booked' && existingAppointment && (
+          <AppointmentDetailsCard
+            {...existingAppointment}
+            variant="lookup"
+            footer={<LookupCardFooter />}
+          />
         )}
       </div>
     </PublicShell>

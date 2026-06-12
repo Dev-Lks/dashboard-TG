@@ -4,6 +4,7 @@ import { AdminLogin } from './_components/AdminLogin';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { MetricCard } from '@/components/admin/MetricCard';
 import { EmptyState } from '@/components/shared/EmptyState';
+import { UNIT_ID } from '@/lib/branding';
 
 export default async function AdminDashboard() {
   const authed = await isAdminAuthenticated();
@@ -12,8 +13,8 @@ export default async function AdminDashboard() {
     return (
       <div className="mx-auto max-w-sm pt-8">
         <div className="mb-5">
-          <div className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--olive-dark)]">Área restrita</div>
-          <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-[var(--olive-900)]">Acesso ao Painel de Comando</h1>
+          <div className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--olive-dark)]">{UNIT_ID}</div>
+          <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-[var(--olive-900)]">Painel de Comando</h1>
         </div>
         <AdminLogin />
       </div>
@@ -53,7 +54,7 @@ export default async function AdminDashboard() {
   return (
     <div>
       <AdminPageHeader
-        eyebrow="Painel de comando"
+        eyebrow={UNIT_ID}
         title="Visão Geral da Operação"
       />
 

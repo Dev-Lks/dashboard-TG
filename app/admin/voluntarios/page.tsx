@@ -3,6 +3,7 @@ import { createServerSupabase } from '@/lib/supabase/server';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { ExportPanel } from '@/components/admin/appointments/ExportPanel';
 import { VolunteersByTurma } from '@/components/admin/volunteers/VolunteersByTurma';
+import { UNIT_ID } from '@/lib/branding';
 
 async function getVolunteers(search?: string) {
   const supabase = await createServerSupabase();
@@ -26,7 +27,7 @@ export default async function AdminVolunteersPage({ searchParams }: { searchPara
   return (
     <div>
       <AdminPageHeader
-        eyebrow="Efetivo"
+        eyebrow={UNIT_ID}
         title="Efetivo por turma"
       />
 

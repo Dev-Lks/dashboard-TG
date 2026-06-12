@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import "./globals.css";
+import { SITE_DESCRIPTION, SITE_TITLE } from "@/lib/branding";
 import { Toaster } from "sonner";
 
 export const viewport: Viewport = {
@@ -10,8 +11,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "TG 11 | Missão Doação de Sangue",
-  description: "Agendamento de doação de sangue — TG 11 Ituiutaba.",
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
   icons: {
     icon: "/favicon.ico",
   },

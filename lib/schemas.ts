@@ -16,6 +16,11 @@ export const createAppointmentSchema = z.object({
   verificationToken: z.string().min(1),
 });
 
+export const lookupAppointmentSchema = z.object({
+  volunteerId: z.string().uuid(),
+  verificationToken: z.string().min(1),
+});
+
 export const adminLoginSchema = z.object({
   password: z.string().min(1, 'Senha é obrigatória'),
 });
@@ -46,6 +51,7 @@ export const rescheduleAppointmentSchema = z.object({
 export type VolunteerSearchInput = z.infer<typeof volunteerSearchSchema>;
 export type VerifyVolunteerInput = z.infer<typeof verifyVolunteerSchema>;
 export type CreateAppointmentInput = z.infer<typeof createAppointmentSchema>;
+export type LookupAppointmentInput = z.infer<typeof lookupAppointmentSchema>;
 export type AdminLoginInput = z.infer<typeof adminLoginSchema>;
 export type DonationDateInput = z.infer<typeof donationDateSchema>;
 export type RescheduleAppointmentInput = z.infer<typeof rescheduleAppointmentSchema>;

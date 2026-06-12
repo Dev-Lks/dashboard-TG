@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ArrowRight, MapPin, Phone, Users } from 'lucide-react';
 import type { PublicMissionDate } from '@/lib/dates/public-queries';
+import { MISSION_EYEBROW, UNIT_LABEL } from '@/lib/branding';
 
 type EventHeroProps = {
   dates: PublicMissionDate[];
@@ -45,8 +46,8 @@ export function EventHero({ dates }: EventHeroProps) {
     return (
       <section className="mission-panel rounded-lg px-5 py-8 sm:px-8 sm:py-10">
         <div className="max-w-2xl">
-          <p className="panel-eyebrow text-xs font-extrabold uppercase tracking-[0.18em]">Missão: Doação de Sangue</p>
-          <h1 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">TG 11 — Ituiutaba/MG</h1>
+          <p className="panel-eyebrow text-xs font-extrabold uppercase tracking-[0.18em]">{MISSION_EYEBROW}</p>
+          <h1 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">{UNIT_LABEL}</h1>
           <p className="panel-muted mt-4 text-base leading-7">
             Nenhuma data aberta no momento. Aguarde a publicação de novas datas pela coordenação.
           </p>
@@ -68,8 +69,8 @@ export function EventHero({ dates }: EventHeroProps) {
     <div className="space-y-4">
       <section className="mission-panel rounded-lg px-5 py-6 sm:px-8 sm:py-8">
         <div className="max-w-2xl">
-          <p className="panel-eyebrow text-xs font-extrabold uppercase tracking-[0.18em]">Missão: Doação de Sangue</p>
-          <h1 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">TG 11 — Ituiutaba/MG</h1>
+          <p className="panel-eyebrow text-xs font-extrabold uppercase tracking-[0.18em]">{MISSION_EYEBROW}</p>
+          <h1 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">{UNIT_LABEL}</h1>
           <p className="panel-muted mt-2 text-sm">
             {dates.length} data{dates.length !== 1 ? 's' : ''} disponíve{dates.length !== 1 ? 'is' : 'l'} para agendamento
           </p>
@@ -84,7 +85,7 @@ export function EventHero({ dates }: EventHeroProps) {
             </div>
           </div>
 
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
             {hasOpenSlots ? (
               <Link href="/agendar" className="btn btn-primary btn-lg sm:w-auto">
                 Fazer meu agendamento <ArrowRight className="h-4 w-4" />
@@ -99,6 +100,12 @@ export function EventHero({ dates }: EventHeroProps) {
               {PHONE}
             </a>
           </div>
+          <Link
+            href="/meus-agendamentos"
+            className="panel-link mt-3 inline-block text-sm font-bold hover:underline"
+          >
+            Já agendou? Consulte seu agendamento
+          </Link>
         </div>
       </section>
 

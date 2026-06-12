@@ -3,6 +3,7 @@ import { createServiceRoleClient } from '@/lib/supabase/server';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { DatesPageClient } from '@/components/admin/dates/DatesPageClient';
 import { MissionDateList } from '@/components/admin/dates/MissionDateList';
+import { UNIT_ID } from '@/lib/branding';
 async function getDatesWithOccupancy() {
   const supabase = createServiceRoleClient();
   const { data: occupancy } = await supabase.from('vw_date_occupancy').select('*').order('date', { ascending: true });
@@ -26,7 +27,7 @@ export default async function AdminDatesPage() {
   return (
     <div>
       <AdminPageHeader
-        eyebrow="Gerenciamento de datas"
+        eyebrow={UNIT_ID}
         title="Calendário da Missão"
       />
 
