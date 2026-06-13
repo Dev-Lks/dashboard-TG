@@ -4,7 +4,7 @@ import {
   getMissionAttendanceStateLabel,
   pickActiveAppointment,
   type MissionAppointmentRecord,
-} from '@/lib/appointments/mission-attendance';
+} from '@/lib/appointments/mission-attendance-utils';
 
 function appt(overrides: Partial<MissionAppointmentRecord>): MissionAppointmentRecord {
   return {

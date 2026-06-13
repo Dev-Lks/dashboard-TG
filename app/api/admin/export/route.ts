@@ -10,7 +10,8 @@ import {
   type ExportAppointment,
   type ExportVolunteer,
 } from '@/lib/export/tg-spreadsheet';
-import { getMissionAttendanceRoster, getMissionAttendanceStateLabel } from '@/lib/appointments/mission-attendance';
+import { getMissionAttendanceRoster } from '@/lib/appointments/mission-attendance';
+import { getMissionAttendanceStateLabel } from '@/lib/appointments/mission-attendance-utils';
 import { getRoleLabel } from '@/lib/volunteers/roles';
 import {
   exportFilenameByDate,

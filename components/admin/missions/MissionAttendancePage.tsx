@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { Search, CheckCircle, XCircle } from 'lucide-react';
 import { markAttendanceAction } from '@/lib/appointments/actions';
-import type { MissionAttendanceRow, MissionAttendanceSummary } from '@/lib/appointments/mission-attendance';
+import type { MissionAttendanceRow, MissionAttendanceSummary } from '@/lib/appointments/mission-attendance-utils';
 import type { MissionAttendanceState } from '@/lib/types';
 import { TURMAS, type TurmaId } from '@/lib/volunteers/turmas';
 import { getRoleLabel } from '@/lib/volunteers/roles';

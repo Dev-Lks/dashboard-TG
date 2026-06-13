@@ -1,5 +1,5 @@
 import type { MissionAttendanceState } from '@/lib/types';
-import { getMissionAttendanceStateLabel } from '@/lib/appointments/mission-attendance';
+import { getMissionAttendanceStateLabel } from '@/lib/appointments/mission-attendance-utils';
 
 type MissionAttendanceStatusBadgeProps = {
   state: MissionAttendanceState;
