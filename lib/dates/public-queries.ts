@@ -1,5 +1,6 @@
 import { createServerSupabase } from '@/lib/supabase/server';
 import { formatDayName, formatTimeRangeFromSlots } from '@/lib/dates/schedule-display';
+import { resolveScheduleMode } from '@/lib/dates/schedule-mode';
 import { formatDateBR } from '@/lib/date-utils';
 import type { Mission } from '@/lib/missions/types';
 import type { ScheduleMode } from '@/lib/types';
@@ -70,7 +71,10 @@ export async function getPublicMissionsWithDates(): Promise<PublicMissionWithDat
         .map((slot: { time: string }) => slot.time)
         .sort();
 
-      const scheduleMode = d.schedule_mode as ScheduleMode;
+      const scheduleMode = resolveScheduleMode(
+        d.schedule_mode as ScheduleMode,
+        mission.default_schedule_mode,
+      );
       if (scheduleMode === 'slots' && activeSlots.length === 0) continue;
 
       const booked = bookedMap.get(d.id) || 0;
@@ -151,7 +155,10 @@ export async function getUpcomingMissionDates(missionSlug: string, limit = 12): 
       .map((slot: { time: string }) => slot.time)
       .sort();
 
-    const scheduleMode = d.schedule_mode as ScheduleMode;
+    const scheduleMode = resolveScheduleMode(
+      d.schedule_mode as ScheduleMode,
+      mission.default_schedule_mode,
+    );
     if (scheduleMode === 'slots' && activeSlots.length === 0) continue;
 
     const booked = bookedMap.get(d.id) || 0;

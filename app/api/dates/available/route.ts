@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabase } from '@/lib/supabase/server';
 import { formatDayName, formatTimeRangeFromSlots } from '@/lib/dates/schedule-display';
+import { resolveScheduleMode } from '@/lib/dates/schedule-mode';
 import type { ScheduleMode } from '@/lib/types';
 
 export async function GET(request: NextRequest) {
@@ -8,10 +9,11 @@ export async function GET(request: NextRequest) {
   const supabase = await createServerSupabase();
 
   let missionId: string | null = null;
+  let missionDefaultMode: ScheduleMode | null = null;
   if (missionSlug) {
     const { data: mission } = await supabase
       .from('missions')
-      .select('id, is_public')
+      .select('id, is_public, default_schedule_mode')
       .eq('slug', missionSlug)
       .maybeSingle();
 
@@ -19,6 +21,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ dates: [], mission: null });
     }
     missionId = mission.id;
+    missionDefaultMode = mission.default_schedule_mode as ScheduleMode;
   }
 
   let datesQuery = supabase
@@ -55,11 +58,25 @@ export async function GET(request: NextRequest) {
     bookedMap.set(a.donation_date_id, (bookedMap.get(a.donation_date_id) || 0) + 1);
   });
 
+  const missionDefaultsById = new Map<string, ScheduleMode>();
+  if (!missionSlug && dates?.length) {
+    const missionIds = [...new Set(dates.map((d: { mission_id: string }) => d.mission_id))];
+    const { data: missions } = await supabase
+      .from('missions')
+      .select('id, default_schedule_mode')
+      .in('id', missionIds);
+
+    for (const mission of missions || []) {
+      missionDefaultsById.set(mission.id, mission.default_schedule_mode as ScheduleMode);
+    }
+  }
+
   const result = (dates || []).flatMap((d: {
     id: string;
     date: string;
     capacity: number;
     schedule_mode: ScheduleMode;
+    mission_id: string;
     donation_time_slots?: { time: string; is_active: boolean }[];
   }) => {
     const booked = bookedMap.get(d.id) || 0;
@@ -71,7 +88,12 @@ export async function GET(request: NextRequest) {
       .map((slot) => slot.time)
       .sort();
 
-    if (d.schedule_mode === 'slots' && activeSlots.length === 0) {
+    const effectiveScheduleMode = resolveScheduleMode(
+      d.schedule_mode,
+      missionDefaultMode ?? missionDefaultsById.get(d.mission_id),
+    );
+
+    if (effectiveScheduleMode === 'slots' && activeSlots.length === 0) {
       return [];
     }
 
@@ -83,10 +105,10 @@ export async function GET(request: NextRequest) {
       remaining,
       is_full: isFull,
       day_name: formatDayName(d.date),
-      time_range: d.schedule_mode === 'presence_only'
+      time_range: effectiveScheduleMode === 'presence_only'
         ? 'Presença no dia'
         : formatTimeRangeFromSlots(activeSlots),
-      schedule_mode: d.schedule_mode,
+      schedule_mode: effectiveScheduleMode,
     }];
   });
 

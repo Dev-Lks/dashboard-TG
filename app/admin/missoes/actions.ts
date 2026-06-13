@@ -84,10 +84,34 @@ export async function updateMissionAction(formData: FormData): Promise<MissionAc
 
   if (error) return { success: false, error: 'Erro ao atualizar missão' };
 
+  if (defaultScheduleMode === 'presence_only') {
+    const { data: missionDates } = await supabase
+      .from('donation_dates')
+      .select('id')
+      .eq('mission_id', id);
+
+    if (missionDates?.length) {
+      const dateIds = missionDates.map((d) => d.id);
+
+      await supabase
+        .from('donation_dates')
+        .update({
+          schedule_mode: 'presence_only',
+          schedule_start: null,
+          schedule_end: null,
+          slot_interval: null,
+        })
+        .eq('mission_id', id);
+
+      await supabase.from('donation_time_slots').delete().in('donation_date_id', dateIds);
+    }
+  }
+
   revalidatePath('/admin/missoes');
   revalidatePath('/admin/datas');
   revalidatePath('/');
   revalidatePath('/agendar');
+  revalidatePath('/agendar/doacao-sangue');
   return { success: true, id };
 }
 
