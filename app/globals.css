@@ -474,6 +474,23 @@ body::selection {
   color: var(--panel-accent);
 }
 
+.appointment-card-header {
+  background:
+    linear-gradient(135deg, rgba(31, 41, 37, 0.98), rgba(44, 58, 50, 0.98)),
+    var(--surface-dark);
+  color: var(--text-inverse);
+}
+
+.appointment-card-icon {
+  color: var(--olive-light);
+}
+
+.appointment-card-note {
+  border: 1px solid var(--sand);
+  background: var(--sand-light);
+  color: var(--olive-900);
+}
+
 .operation-strip {
   border-left: 4px solid var(--olive);
 }
@@ -723,6 +740,22 @@ body::selection {
 [data-theme="dark"] .mission-panel .btn-ghost:hover {
   background-color: var(--surface-muted);
   color: var(--text);
+}
+
+[data-theme="dark"] .appointment-card-header {
+  background: linear-gradient(160deg, #18181b 0%, #222226 100%);
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+
+[data-theme="dark"] .appointment-card-icon {
+  color: var(--success);
+}
+
+[data-theme="dark"] .appointment-card-note {
+  border-color: var(--border);
+  background: var(--surface-raised);
+  color: var(--text-muted);
 }
 
 [data-theme="dark"] .table th {

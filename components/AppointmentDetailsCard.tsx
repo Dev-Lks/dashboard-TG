@@ -41,8 +41,8 @@ export function AppointmentDetailsCard({
 
   return (
     <div className="card max-w-xl mx-auto overflow-hidden">
-      <div className="bg-[var(--surface-dark)] p-6 text-center text-[var(--text-inverse)]">
-        <CheckCircle className="mx-auto h-12 w-12 mb-3" />
+      <div className="appointment-card-header p-6 text-center">
+        <CheckCircle className="appointment-card-icon mx-auto h-12 w-12 mb-3" />
         <div className="text-2xl font-extrabold tracking-tight">{titles[variant]}</div>
       </div>
 
@@ -96,7 +96,7 @@ export function AppointmentDetailsCard({
           </div>
         </div>
 
-        <div className="rounded-md border border-[var(--sand)] bg-[var(--sand-light)] px-4 py-3 text-xs font-medium text-[var(--olive-900)]">
+        <div className="appointment-card-note rounded-md px-4 py-3 text-xs font-medium">
           Caso precise alterar ou cancelar seu agendamento, procure o responsável no TG.
         </div>
       </div>
