@@ -2,11 +2,14 @@ import ExcelJS from 'exceljs';
 import { formatDateBanner } from '@/lib/dates/schedule-display';
 import { normalizeRole } from '@/lib/volunteers/roles';
 import { getTurmaFromSeq, getTurmaInfo, type TurmaId } from '@/lib/volunteers/turmas';
+import type { AttendanceStatus } from '@/lib/types';
 
 export const TG_COLUMNS = ['SEQ', 'GRAD', 'NR', 'NOME', 'NOME GUERRA', 'NASCIMENTO', 'TELEFONE'] as const;
 
-const ROSTER_COLUMNS = ['#', 'NR', 'NOME DE GUERRA', 'NOME COMPLETO', 'HORÁRIO', 'TELEFONE', 'MISSÃO'] as const;
+const ROSTER_COLUMNS = ['#', 'NR', 'NOME DE GUERRA', 'NOME COMPLETO', 'HORÁRIO', 'TELEFONE', 'MISSÃO', 'STATUS'] as const;
 const ROSTER_COL_COUNT = ROSTER_COLUMNS.length;
+
+const CONTROL_COLUMNS = ['NR', 'NOME DE GUERRA', 'NOME COMPLETO', 'FUNÇÃO', 'DATA', 'STATUS'] as const;
 
 export type ExportVolunteer = {
   seq: number | null;
@@ -22,9 +25,19 @@ export type ExportAppointment = {
   created_at: string;
   time: string | null;
   mission_name?: string | null;
+  attendance_status?: AttendanceStatus | null;
   volunteers: ExportVolunteer | null;
   donation_dates: { date: string } | null;
 };
+
+export function formatAttendanceStatusForExport(
+  attendanceStatus: AttendanceStatus | null | undefined,
+): string {
+  if (attendanceStatus === 'completed') return 'Realizado';
+  if (attendanceStatus === 'no_show') return 'Não compareceu';
+  if (attendanceStatus === 'pending') return 'Agendado';
+  return 'Pendente';
+}
 
 export function toExcelDateSerial(dateStr: string | null | undefined): number | '' {
   if (!dateStr) return '';
@@ -111,7 +124,7 @@ function applyVolunteersColumnWidths(ws: ExcelJS.Worksheet) {
 }
 
 function applyRosterColumnWidths(ws: ExcelJS.Worksheet) {
-  const widths = [4, 8, 18, 36, 10, 14, 20];
+  const widths = [4, 8, 18, 36, 10, 14, 20, 16];
   widths.forEach((w, i) => {
     ws.getColumn(i + 1).width = w;
   });
@@ -182,6 +195,7 @@ function appointmentToRosterRow(appt: ExportAppointment, index: number) {
     appt.time || 'Presença',
     v.phone || '',
     appt.mission_name || '',
+    formatAttendanceStatusForExport(appt.attendance_status),
   ];
 }
 
@@ -343,6 +357,7 @@ export function buildMissionWorkbook(
   missionName: string,
   appointments: ExportAppointment[],
   dates: { date: string; is_active: boolean }[],
+  controlRows?: string[][],
 ) {
   const wb = new ExcelJS.Workbook();
   const byDate = groupAppointmentsByDate(filterConfirmedAppointments(appointments));
@@ -353,5 +368,25 @@ export function buildMissionWorkbook(
     .sort();
 
   addRosterByDateSheet(wb, appointments, dateOrder, missionName.slice(0, 31));
+
+  if (controlRows && controlRows.length > 0) {
+    const ws = wb.addWorksheet('CONTROLE');
+    const headerRow = ws.getRow(1);
+    headerRow.values = [...CONTROL_COLUMNS];
+    styleHeaderRow(headerRow);
+
+    let rowNum = 2;
+    for (const values of controlRows) {
+      ws.getRow(rowNum).values = values;
+      rowNum += 1;
+    }
+
+    const controlWidths = [8, 18, 36, 12, 12, 18];
+    controlWidths.forEach((w, i) => {
+      ws.getColumn(i + 1).width = w;
+    });
+    ws.views = [{ state: 'frozen', ySplit: 1 }];
+  }
+
   return wb;
 }

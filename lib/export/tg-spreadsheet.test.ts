@@ -6,6 +6,7 @@ import {
   filterAppointmentsByTurma,
   filterVolunteersByTurma,
   formatGradForExport,
+  formatAttendanceStatusForExport,
   groupAppointmentsByDate,
   sortAppointmentsByWarName,
   splitByRole,
@@ -74,6 +75,15 @@ describe('filterAppointmentsByTurma', () => {
   it('filters appointments by volunteer turma', () => {
     expect(filterAppointmentsByTurma(appointments, 't1')).toHaveLength(1);
     expect(filterAppointmentsByTurma(appointments, 't3')).toHaveLength(1);
+  });
+});
+
+describe('formatAttendanceStatusForExport', () => {
+  it('maps attendance statuses to export labels', () => {
+    expect(formatAttendanceStatusForExport('completed')).toBe('Realizado');
+    expect(formatAttendanceStatusForExport('pending')).toBe('Agendado');
+    expect(formatAttendanceStatusForExport('no_show')).toBe('Não compareceu');
+    expect(formatAttendanceStatusForExport(null)).toBe('Pendente');
   });
 });
 

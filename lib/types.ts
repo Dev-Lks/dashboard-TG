@@ -36,6 +36,10 @@ export type TimeSlot = {
   created_at: string;
 };
 
+export type AttendanceStatus = 'pending' | 'completed' | 'no_show';
+
+export type MissionAttendanceState = 'completed' | 'scheduled' | 'no_show' | 'not_scheduled';
+
 export type Appointment = {
   id: string;
   volunteer_id: string;
@@ -43,6 +47,8 @@ export type Appointment = {
   mission_id: string;
   time_slot_id: string | null;
   status: 'confirmed' | 'cancelled';
+  attendance_status: AttendanceStatus;
+  completed_at: string | null;
   admin_notes: string | null;
   created_at: string;
   updated_at: string;

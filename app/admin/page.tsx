@@ -1,5 +1,6 @@
 import { isAdminAuthenticated } from '@/lib/admin-auth';
 import { createServiceRoleClient } from '@/lib/supabase/server';
+import { getCompletedCountForMission } from '@/lib/appointments/mission-attendance';
 import { AdminLogin } from './_components/AdminLogin';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { MetricCard } from '@/components/admin/MetricCard';
@@ -25,6 +26,7 @@ export default async function AdminDashboard() {
 
   const { count: volunteerCount } = await supabase.from('volunteers').select('id', { count: 'exact', head: true });
   const { count: confirmedCount } = await supabase.from('appointments').select('id', { count: 'exact', head: true }).eq('status', 'confirmed');
+  const completedCount = await getCompletedCountForMission('doacao-sangue');
   const { data: dates } = await supabase.from('donation_dates').select('id, date, capacity, is_active');
 
   const { data: allConfirmed } = await supabase.from('appointments').select('donation_date_id').eq('status', 'confirmed');
@@ -58,9 +60,10 @@ export default async function AdminDashboard() {
         title="Visão Geral da Operação"
       />
 
-      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5">
         <MetricCard label="Efetivo cadastrado" value={volunteerCount || 0} />
         <MetricCard label="Efetivo agendado" value={confirmedCount || 0} tone="success" />
+        <MetricCard label="Missões realizadas" value={completedCount} tone="success" />
         <MetricCard label="Datas abertas" value={open} tone="success" />
         <MetricCard label="Cheias / inativas" value={fullOrClosed} tone="danger" />
       </div>

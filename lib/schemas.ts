@@ -55,4 +55,9 @@ export type CreateAppointmentInput = z.infer<typeof createAppointmentSchema>;
 export type LookupAppointmentInput = z.infer<typeof lookupAppointmentSchema>;
 export type AdminLoginInput = z.infer<typeof adminLoginSchema>;
 export type DonationDateInput = z.infer<typeof donationDateSchema>;
-export type RescheduleAppointmentInput = z.infer<typeof rescheduleAppointmentSchema>;
+export const markAttendanceSchema = z.object({
+  appointmentId: z.string().uuid(),
+  attendanceStatus: z.enum(['completed', 'no_show']),
+});
+
+export type MarkAttendanceInput = z.infer<typeof markAttendanceSchema>;

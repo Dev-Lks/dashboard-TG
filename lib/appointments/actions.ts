@@ -1,7 +1,7 @@
 'use server';
 
 import { requireAdmin } from '@/lib/admin-auth';
-import { rescheduleAppointmentSchema, cancelAppointmentSchema, updateAppointmentNotesSchema } from '@/lib/schemas';
+import { rescheduleAppointmentSchema, cancelAppointmentSchema, updateAppointmentNotesSchema, markAttendanceSchema } from '@/lib/schemas';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
@@ -99,4 +99,70 @@ export async function rescheduleAppointmentAction(
   revalidatePath('/admin');
   revalidatePath('/admin/datas');
   return { success: true, message: 'Voluntário reagendado com sucesso' };
+}
+
+export async function markAttendanceAction(
+  appointmentId: string,
+  attendanceStatus: 'completed' | 'no_show',
+): Promise<ActionResult> {
+  await requireAdmin();
+
+  const parsed = markAttendanceSchema.safeParse({ appointmentId, attendanceStatus });
+  if (!parsed.success) {
+    return { success: false, error: 'Dados inválidos' };
+  }
+
+  const supabase = createServiceRoleClient();
+  const { data: existing, error: fetchError } = await supabase
+    .from('appointments')
+    .select('id, status, attendance_status, mission_id')
+    .eq('id', parsed.data.appointmentId)
+    .maybeSingle();
+
+  if (fetchError || !existing) {
+    return { success: false, error: 'Agendamento não encontrado' };
+  }
+
+  if (existing.status !== 'confirmed') {
+    return { success: false, error: 'Apenas agendamentos confirmados podem ser marcados' };
+  }
+
+  if (existing.attendance_status !== 'pending') {
+    return { success: false, error: 'Este agendamento já foi marcado' };
+  }
+
+  const updatePayload =
+    parsed.data.attendanceStatus === 'completed'
+      ? { attendance_status: 'completed' as const, completed_at: new Date().toISOString() }
+      : { attendance_status: 'no_show' as const, completed_at: null };
+
+  const { error } = await supabase
+    .from('appointments')
+    .update(updatePayload)
+    .eq('id', parsed.data.appointmentId)
+    .eq('status', 'confirmed')
+    .eq('attendance_status', 'pending');
+
+  if (error) {
+    return { success: false, error: 'Erro ao registrar presença' };
+  }
+
+  const { data: mission } = await supabase
+    .from('missions')
+    .select('slug')
+    .eq('id', existing.mission_id)
+    .maybeSingle();
+
+  revalidatePath('/admin/missoes');
+  revalidatePath('/admin');
+  if (mission?.slug) {
+    revalidatePath(`/admin/missoes/${mission.slug}/controle`);
+  }
+
+  const message =
+    parsed.data.attendanceStatus === 'completed'
+      ? 'Missão marcada como realizada'
+      : 'Registrado como não compareceu';
+
+  return { success: true, message };
 }

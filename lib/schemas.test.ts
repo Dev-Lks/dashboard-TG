@@ -3,6 +3,7 @@ import {
   adminLoginSchema,
   createAppointmentSchema,
   donationDateSchema,
+  markAttendanceSchema,
   verifyVolunteerSchema,
   volunteerSearchSchema,
 } from './schemas';
@@ -72,6 +73,15 @@ describe('verifyVolunteerSchema', () => {
         birthDate: '29/08/2005',
       }).success,
     ).toBe(false);
+  });
+});
+
+describe('markAttendanceSchema', () => {
+  it('accepts completed and no_show for valid appointment id', () => {
+    const id = '550e8400-e29b-41d4-a716-446655440000';
+    expect(markAttendanceSchema.safeParse({ appointmentId: id, attendanceStatus: 'completed' }).success).toBe(true);
+    expect(markAttendanceSchema.safeParse({ appointmentId: id, attendanceStatus: 'no_show' }).success).toBe(true);
+    expect(markAttendanceSchema.safeParse({ appointmentId: id, attendanceStatus: 'pending' }).success).toBe(false);
   });
 });
 

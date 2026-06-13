@@ -10,6 +10,8 @@ import {
   type ExportAppointment,
   type ExportVolunteer,
 } from '@/lib/export/tg-spreadsheet';
+import { getMissionAttendanceRoster, getMissionAttendanceStateLabel } from '@/lib/appointments/mission-attendance';
+import { getRoleLabel } from '@/lib/volunteers/roles';
 import {
   exportFilenameByDate,
   exportFilenameByTurma,
@@ -82,6 +84,7 @@ export async function GET(request: NextRequest) {
     .select(`
       created_at,
       status,
+      attendance_status,
       mission_id,
       volunteers (seq, grad, nr, full_name, war_name, birth_date, phone),
       donation_dates (date),
@@ -123,6 +126,7 @@ export async function GET(request: NextRequest) {
       created_at: a.created_at,
       time: slot?.time ?? null,
       mission_name: mission?.name ?? missionName ?? null,
+      attendance_status: a.attendance_status ?? 'pending',
       volunteers: mapVolunteer(v),
       donation_dates: d ?? null,
     };
@@ -152,7 +156,17 @@ export async function GET(request: NextRequest) {
       .eq('mission_id', missionId)
       .order('date', { ascending: true });
 
-    wb = buildMissionWorkbook(missionName, appointments, dates || []);
+    const { rows } = await getMissionAttendanceRoster(missionSlug!, { role: 'atirador' });
+    const controlRows = rows.map((row) => [
+      row.nr,
+      row.warName || '',
+      row.fullName,
+      getRoleLabel(row.role),
+      row.scheduledDate || '',
+      getMissionAttendanceStateLabel(row.state),
+    ]);
+
+    wb = buildMissionWorkbook(missionName, appointments, dates || [], controlRows);
     filename = exportFilenameByMission(missionName);
   } else {
     const { data: dates } = await supabase

@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { Plus, Pencil, Trash2, Globe, GlobeLock } from 'lucide-react';
+import { Plus, Pencil, Trash2, Globe, GlobeLock, ClipboardCheck } from 'lucide-react';
 import { FormField } from '@/components/shared/FormField';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import {
@@ -247,6 +247,10 @@ export function MissionsPageClient({ missions }: MissionsPageClientProps) {
               {m.description && <p className="mt-2 text-sm text-[var(--text-muted)]">{m.description}</p>}
             </div>
             <div className="flex shrink-0 flex-wrap gap-2">
+              <a href={`/admin/missoes/${m.slug}/controle`} className="btn btn-primary btn-sm">
+                <ClipboardCheck className="h-4 w-4" />
+                Controle
+              </a>
               <button type="button" onClick={() => handleTogglePublic(m)} disabled={pending} className="btn btn-secondary btn-sm" title={m.is_public ? 'Ocultar' : 'Publicar'}>
                 {m.is_public ? <GlobeLock className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
                 {m.is_public ? 'Ocultar' : 'Publicar'}
