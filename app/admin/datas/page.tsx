@@ -23,9 +23,8 @@ async function getDatesWithOccupancy(missionId?: string) {
 
   let datesQuery = supabase
     .from('donation_dates')
-    .select('id, date, mission_id, notes, schedule_mode, donation_time_slots(time)')
+    .select('id, date, mission_id, notes, schedule_mode, schedule_start, schedule_end, slot_interval, donation_time_slots(time)')
     .order('date', { ascending: true });
-
   if (missionId) {
     datesQuery = datesQuery.eq('mission_id', missionId);
   }
@@ -37,11 +36,13 @@ async function getDatesWithOccupancy(missionId?: string) {
     ...o,
     mission_id: notesMap.get(o.date)?.mission_id,
     schedule_mode: notesMap.get(o.date)?.schedule_mode,
+    schedule_start: notesMap.get(o.date)?.schedule_start,
+    schedule_end: notesMap.get(o.date)?.schedule_end,
+    slot_interval: notesMap.get(o.date)?.slot_interval,
     notes: notesMap.get(o.date)?.notes ?? null,
     donation_time_slots: notesMap.get(o.date)?.donation_time_slots,
   }));
 }
-
 export default async function AdminDatesPage({
   searchParams,
 }: {

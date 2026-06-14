@@ -44,7 +44,16 @@ export function MissionDateDetailPanel({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [capacity, setCapacity] = useState(initialCapacity ?? mission.default_capacity);
   const [notes, setNotes] = useState(initialNotes);
-  const [schedule, setSchedule] = useState<ScheduleEditorValue>(() => defaultSchedule(mission));
+  const [schedule, setSchedule] = useState<ScheduleEditorValue>(() =>
+    registered
+      ? {
+          mode: registered.schedule_mode ?? mission.default_schedule_mode,
+          start: registered.schedule_start ?? '07:00',
+          end: registered.schedule_end ?? '10:00',
+          interval: registered.slot_interval ?? 30,
+        }
+      : defaultSchedule(mission),
+  );
 
   useEffect(() => {
     if (!registered) {
@@ -99,6 +108,10 @@ export function MissionDateDetailPanel({
       fd.set('id', registered.id);
       fd.set('capacity', String(capacity));
       fd.set('notes', notes);
+      fd.set('scheduleMode', schedule.mode);
+      fd.set('scheduleStart', schedule.start);
+      fd.set('scheduleEnd', schedule.end);
+      fd.set('slotInterval', String(schedule.interval));
       const result = await updateDateAction(fd);
       if (result.success) {
         toast.success('Data atualizada');
@@ -149,9 +162,7 @@ export function MissionDateDetailPanel({
         </div>
 
         <div className="space-y-4 p-4">
-          {!isEdit && (
-            <ScheduleEditor value={schedule} onChange={setSchedule} />
-          )}
+          <ScheduleEditor value={schedule} onChange={setSchedule} />
 
           <DonationSchedulePreview
             times={previewTimes}

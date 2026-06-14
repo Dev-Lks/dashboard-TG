@@ -31,6 +31,9 @@ export type RegisteredDateInfo = {
   remaining: number;
   is_full: boolean;
   schedule_mode?: 'slots' | 'presence_only';
+  schedule_start?: string | null;
+  schedule_end?: string | null;
+  slot_interval?: number | null;
   notes?: string | null;
   donation_time_slots?: { time: string }[];
 };
