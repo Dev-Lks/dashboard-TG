@@ -1,6 +1,7 @@
 import ExcelJS from 'exceljs';
 import { formatDateBanner } from '@/lib/dates/schedule-display';
 import { normalizeRole } from '@/lib/volunteers/roles';
+import { compareByNr } from '@/lib/volunteers/sort';
 import { getTurmaFromSeq, getTurmaInfo, type TurmaId } from '@/lib/volunteers/turmas';
 import type { AttendanceStatus } from '@/lib/types';
 
@@ -88,6 +89,12 @@ export function sortAppointmentsByWarName(appointments: ExportAppointment[]): Ex
   });
 }
 
+export function sortAppointmentsByNr(appointments: ExportAppointment[]): ExportAppointment[] {
+  return [...appointments].sort((a, b) =>
+    compareByNr(a.volunteers?.nr ?? '', b.volunteers?.nr ?? ''),
+  );
+}
+
 export function splitByRole(appointments: ExportAppointment[]) {
   const monitors: ExportAppointment[] = [];
   const atiradores: ExportAppointment[] = [];
@@ -101,7 +108,7 @@ export function splitByRole(appointments: ExportAppointment[]) {
 
   return {
     monitors: sortAppointmentsByWarName(monitors),
-    atiradores: sortAppointmentsByWarName(atiradores),
+    atiradores: sortAppointmentsByNr(atiradores),
   };
 }
 

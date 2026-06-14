@@ -15,6 +15,7 @@ export default async function AdminAppointmentsPage({
 }: {
   searchParams: Promise<{
     date?: string;
+    mission?: string;
     status?: string;
     q?: string;
   }>;
@@ -28,37 +29,57 @@ export default async function AdminAppointmentsPage({
     getDateOccupancy(),
   ]);
 
+  const missions = Array.from(
+    new Map(
+      rosters.map((r) => [
+        r.mission_slug,
+        { slug: r.mission_slug, name: r.mission_name, sort_order: r.mission_sort_order },
+      ]),
+    ).values(),
+  ).sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name, 'pt-BR'));
+
   const today = new Date().toISOString().slice(0, 10);
-  const selectedDate =
-    params.date ||
-    rosters.find((r) => r.date >= today)?.date ||
-    rosters[0]?.date ||
+  const selectedMission =
+    (params.mission && missions.some((m) => m.slug === params.mission) ? params.mission : null) ||
+    missions[0]?.slug ||
     null;
 
-  // Vista simplificada (padrão): efetivo por data
+  const missionRosters = selectedMission
+    ? rosters.filter((r) => r.mission_slug === selectedMission)
+    : rosters;
+
+  const selectedDate =
+    (params.date && missionRosters.some((r) => r.date === params.date) ? params.date : null) ||
+    missionRosters.find((r) => r.date >= today)?.date ||
+    missionRosters[0]?.date ||
+    null;
+
   if (params.status !== 'cancelled') {
-    const appointments = selectedDate
-      ? await getAppointments({ date: selectedDate, status: 'confirmed' })
-      : [];
+    const appointments =
+      selectedDate && selectedMission
+        ? await getAppointments({
+            date: selectedDate,
+            mission: selectedMission,
+            status: 'confirmed',
+          })
+        : [];
 
     return (
       <div>
-        <AdminPageHeader
-          eyebrow={UNIT_ID}
-          title="Quem vai doar?"
-        />
+        <AdminPageHeader eyebrow={UNIT_ID} title="Quem vai doar?" />
         <AppointmentsSimplePage
           rosters={rosters}
+          missions={missions}
           stats={stats}
           appointments={appointments}
           availableDates={availableDates}
+          selectedMission={selectedMission}
           selectedDate={selectedDate}
         />
       </div>
     );
   }
 
-  // Vista de cancelados (link do avançado)
   const cancelled = await getAppointments({ status: 'cancelled' });
 
   return (

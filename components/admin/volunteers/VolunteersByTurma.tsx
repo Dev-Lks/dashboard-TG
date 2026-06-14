@@ -53,7 +53,7 @@ function TurmaCards({ volunteers }: { volunteers: Volunteer[] }) {
               <div className="truncate font-extrabold text-[var(--olive-900)]">{v.war_name || v.full_name}</div>
               <div className="font-mono text-xs font-bold text-[var(--text-muted)]">NR {v.nr}</div>
             </div>
-            <span className="badge badge-command shrink-0">{v.grad || 'Efetivo'}</span>
+            <span className="badge badge-command shrink-0">{v.grad || 'Voluntário'}</span>
           </div>
           {v.phone && (
             <div className="mt-2 font-mono text-xs text-[var(--text-muted)]">{v.phone}</div>

@@ -8,6 +8,7 @@ import {
   formatGradForExport,
   formatAttendanceStatusForExport,
   groupAppointmentsByDate,
+  sortAppointmentsByNr,
   sortAppointmentsByWarName,
   splitByRole,
   toExcelDateSerial,
@@ -110,9 +111,18 @@ describe('splitByRole', () => {
     expect(atiradores).toHaveLength(2);
   });
 
-  it('sorts each group by war name', () => {
-    const { atiradores } = splitByRole(appointments);
-    expect(atiradores.map((a) => a.volunteers?.war_name)).toEqual(['Ana', 'Bruno']);
+  it('sorts atiradores by NR', () => {
+    const mixed: ExportAppointment[] = [
+      appt({ volunteers: { seq: 1, grad: 'Atirador', nr: '10', full_name: 'Zeca', war_name: 'Zeca', birth_date: null, phone: null } }),
+      appt({ volunteers: { seq: 2, grad: 'Atirador', nr: '2', full_name: 'Ana', war_name: 'Ana', birth_date: null, phone: null } }),
+    ];
+    const { atiradores } = splitByRole(mixed);
+    expect(atiradores.map((a) => a.volunteers?.nr)).toEqual(['2', '10']);
+  });
+
+  it('sorts monitors by war name', () => {
+    const { monitors } = splitByRole(appointments);
+    expect(monitors.map((a) => a.volunteers?.war_name)).toEqual(['Zeca']);
   });
 });
 
@@ -127,6 +137,17 @@ describe('groupAppointmentsByDate', () => {
     const byDate = groupAppointmentsByDate(appointments);
     expect(byDate.get('2025-06-02')).toHaveLength(2);
     expect(byDate.get('2025-06-05')).toHaveLength(1);
+  });
+});
+
+describe('sortAppointmentsByNr', () => {
+  it('sorts by NR with numeric comparison', () => {
+    const appointments: ExportAppointment[] = [
+      appt({ volunteers: { seq: 1, grad: 'Atirador', nr: '10', full_name: 'Zeca', war_name: 'Zeca', birth_date: null, phone: null } }),
+      appt({ volunteers: { seq: 2, grad: 'Atirador', nr: '2', full_name: 'Ana', war_name: 'Ana', birth_date: null, phone: null } }),
+    ];
+    const sorted = sortAppointmentsByNr(appointments);
+    expect(sorted.map((a) => a.volunteers?.nr)).toEqual(['2', '10']);
   });
 });
 

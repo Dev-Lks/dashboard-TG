@@ -6,148 +6,119 @@ import type { DateRoster } from '@/lib/appointments/queries';
 import { formatDateBR } from '@/lib/date-utils';
 import { formatDayShortLabel } from '@/lib/dates/schedule-display';
 import { downloadSpreadsheetWithToast } from '@/lib/export/download-spreadsheet';
-import { TURMAS, type TurmaId } from '@/lib/volunteers/turmas';
 
-type ExportPanelProps = {
-  rosters: DateRoster[];
-  showTurma?: boolean;
+type ExportMission = {
+  slug: string;
+  name: string;
 };
 
-export function ExportPanel({ rosters, showTurma = true }: ExportPanelProps) {
-  const [loadingFull, setLoadingFull] = useState(false);
-  const [loadingDate, setLoadingDate] = useState<string | null>(null);
-  const [loadingTurma, setLoadingTurma] = useState<TurmaId | null>(null);
-  const [loadingTurmaDate, setLoadingTurmaDate] = useState<string | null>(null);
+type ExportPanelProps = {
+  missions: ExportMission[];
+  rosters: DateRoster[];
+  selectedMission: string | null;
+  selectedDate: string | null;
+};
+
+export function ExportPanel({
+  missions,
+  selectedMission,
+  selectedDate,
+}: ExportPanelProps) {
+  const [loading, setLoading] = useState<'selection' | 'full' | 'mission' | null>(null);
+
+  const selectedMissionName = missions.find((m) => m.slug === selectedMission)?.name;
+  const dateLabel = selectedDate
+    ? `${formatDateBR(selectedDate)} · ${formatDayShortLabel(selectedDate)}`
+    : null;
+
+  async function handleSelectionExport() {
+    setLoading('selection');
+    try {
+      await downloadSpreadsheetWithToast({
+        mission: selectedMission || undefined,
+        date: selectedDate || undefined,
+        missionName: selectedMissionName,
+      });
+    } finally {
+      setLoading(null);
+    }
+  }
 
   async function handleFullExport() {
-    setLoadingFull(true);
+    setLoading('full');
     try {
       await downloadSpreadsheetWithToast();
     } finally {
-      setLoadingFull(false);
+      setLoading(null);
     }
   }
 
-  async function handleDateExport(date: string) {
-    setLoadingDate(date);
+  async function handleMissionExport() {
+    if (!selectedMission) return;
+    setLoading('mission');
     try {
-      await downloadSpreadsheetWithToast({ date });
+      await downloadSpreadsheetWithToast({
+        mission: selectedMission,
+        missionName: selectedMissionName,
+      });
     } finally {
-      setLoadingDate(null);
-    }
-  }
-
-  async function handleTurmaExport(turmaId: TurmaId) {
-    setLoadingTurma(turmaId);
-    try {
-      await downloadSpreadsheetWithToast({ turma: turmaId });
-    } finally {
-      setLoadingTurma(null);
-    }
-  }
-
-  async function handleTurmaDateExport(turmaId: TurmaId, date: string) {
-    setLoadingTurmaDate(`${turmaId}:${date}`);
-    try {
-      await downloadSpreadsheetWithToast({ turma: turmaId, date });
-    } finally {
-      setLoadingTurmaDate(null);
+      setLoading(null);
     }
   }
 
   return (
-    <div className="card admin-export-panel">
-      <div className="admin-export-panel-head">
-        <h2 className="admin-export-panel-title">Quem vai participar?</h2>
-        <p className="admin-export-panel-sub">Baixe a lista de agendados por data em Excel (.xlsx)</p>
+    <div className="admin-export-toolbar card">
+      <div className="admin-export-toolbar-row">
+        <span className="admin-export-toolbar-label">Exportar</span>
+
+        <div className="admin-export-toolbar-context">
+          {selectedMissionName && (
+            <span className="admin-export-context-item">{selectedMissionName}</span>
+          )}
+          {dateLabel && (
+            <>
+              <span className="admin-export-context-sep" aria-hidden="true">·</span>
+              <span className="admin-export-context-item">{dateLabel}</span>
+            </>
+          )}
+        </div>
+
+        <button
+          type="button"
+          onClick={handleSelectionExport}
+          disabled={loading !== null || !selectedMission}
+          className="btn btn-secondary admin-export-download-btn"
+          title="Baixar seleção atual"
+          aria-label="Baixar seleção atual"
+        >
+          <Download className="h-4 w-4" aria-hidden="true" />
+          {loading === 'selection' ? '...' : ''}
+        </button>
       </div>
 
-      <button
-        type="button"
-        onClick={handleFullExport}
-        disabled={loadingFull}
-        className="btn btn-primary btn-block admin-export-full-btn"
-      >
-        <Download className="h-5 w-5" aria-hidden="true" />
-        {loadingFull ? 'Baixando...' : 'Baixar todos os agendados'}
-      </button>
-
-      {rosters.length > 0 && (
-        <div className="admin-export-dates">
-          <h3 className="admin-export-dates-title">Por data</h3>
-          <div className="admin-export-dates-list">
-            {rosters.map((r) => {
-              const shortLabel = formatDayShortLabel(r.date);
-              const isLoading = loadingDate === r.date;
-              return (
-                <div key={r.id} className="admin-export-date-row">
-                  <div className="admin-export-date-info">
-                    <div className="admin-export-date-label">
-                      {formatDateBR(r.date)} • {shortLabel}
-                    </div>
-                    <div className="admin-export-date-meta">
-                      {r.booked} confirmado{r.booked !== 1 ? 's' : ''}
-                      {r.is_full && ' • CHEIA'}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleDateExport(r.date)}
-                    disabled={isLoading}
-                    className="btn btn-secondary btn-block admin-export-date-btn"
-                  >
-                    <Download className="h-4 w-4" aria-hidden="true" />
-                    {isLoading ? 'Baixando...' : 'Baixar'}
-                  </button>
-                  {showTurma && (
-                    <div className="col-span-full grid grid-cols-3 gap-2 pt-1">
-                      {TURMAS.map((t) => {
-                        const key = `${t.id}:${r.date}`;
-                        return (
-                          <button
-                            key={key}
-                            type="button"
-                            onClick={() => handleTurmaDateExport(t.id, r.date)}
-                            disabled={loadingTurmaDate === key}
-                            className="btn btn-outline btn-sm text-xs"
-                          >
-                            {loadingTurmaDate === key ? '...' : t.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {showTurma && (
-        <details className="admin-export-dates">
-          <summary className="admin-export-dates-title cursor-pointer">Por turma (efetivo cadastrado)</summary>
-          <div className="admin-export-dates-list mt-3">
-            {TURMAS.map((t) => (
-              <div key={t.id} className="admin-export-date-row">
-                <div className="admin-export-date-info">
-                  <div className="admin-export-date-label">{t.label} — {t.name}</div>
-                  <div className="admin-export-date-meta">SEQ {t.min}–{t.max}</div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleTurmaExport(t.id)}
-                  disabled={loadingTurma === t.id}
-                  className="btn btn-secondary btn-block admin-export-date-btn"
-                >
-                  <Download className="h-4 w-4" aria-hidden="true" />
-                  {loadingTurma === t.id ? 'Baixando...' : 'Baixar'}
-                </button>
-              </div>
-            ))}
-          </div>
-        </details>
-      )}
+      <div className="admin-export-toolbar-links">
+        <button
+          type="button"
+          onClick={handleFullExport}
+          disabled={loading !== null}
+          className="admin-export-link"
+        >
+          {loading === 'full' ? 'Baixando...' : 'Baixar tudo'}
+        </button>
+        {selectedMission && (
+          <>
+            <span className="admin-export-link-sep" aria-hidden="true">·</span>
+            <button
+              type="button"
+              onClick={handleMissionExport}
+              disabled={loading !== null}
+              className="admin-export-link"
+            >
+              {loading === 'mission' ? 'Baixando...' : 'Baixar missão'}
+            </button>
+          </>
+        )}
+      </div>
     </div>
   );
 }

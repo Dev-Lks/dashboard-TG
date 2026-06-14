@@ -1155,79 +1155,130 @@ body::selection {
   font-weight: 700;
 }
 
-/* Export panel (Agendamentos) */
-.admin-export-panel {
+/* Export toolbar (Agendamentos) */
+.admin-export-toolbar {
   margin-bottom: 1.25rem;
-  padding: 1.25rem;
+  padding: 0.875rem 1rem;
 }
 
-.admin-export-panel-head {
-  margin-bottom: 1rem;
+.admin-export-toolbar-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
 }
 
-.admin-export-panel-title {
-  font-size: 1.125rem;
-  font-weight: 800;
-  color: var(--olive-900);
-}
-
-.admin-export-panel-sub {
-  margin-top: 0.25rem;
-  font-size: 0.875rem;
-  color: var(--text-muted);
-}
-
-.admin-export-full-btn {
-  margin-bottom: 1.25rem;
-}
-
-.admin-export-dates-title {
-  margin-bottom: 0.75rem;
+.admin-export-toolbar-label {
   font-size: 0.75rem;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   color: var(--olive-dark);
 }
 
-.admin-export-dates-list {
+.admin-export-toolbar-context {
   display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 1;
+  min-width: 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
 }
 
-.admin-export-date-row {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding: 1rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface-raised);
-}
-
-@media (min-width: 640px) {
-  .admin-export-date-row {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .admin-export-date-btn {
-    width: auto;
-    min-width: 8rem;
-  }
-}
-
-.admin-export-date-label {
-  font-weight: 800;
+.admin-export-context-item {
+  font-weight: 600;
   color: var(--olive-900);
 }
 
-.admin-export-date-meta {
-  margin-top: 0.25rem;
-  font-size: 0.875rem;
+.admin-export-context-sep {
   color: var(--text-muted);
+}
+
+.admin-export-download-btn {
+  min-width: 2.5rem;
+  padding-inline: 0.75rem;
+  margin-left: auto;
+}
+
+.admin-export-toolbar-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.625rem;
+  padding-top: 0.625rem;
+  border-top: 1px solid var(--border);
+}
+
+.admin-export-link {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.admin-export-link:hover:not(:disabled) {
+  color: var(--olive-900);
+}
+
+.admin-export-link:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.admin-export-link-sep {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.admin-simple-missions {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.admin-simple-mission-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.125rem;
+  min-width: 7rem;
+  padding: 0.625rem 0.875rem;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-raised);
+  cursor: pointer;
+  transition: border-color 0.1s ease, background 0.1s ease;
+  flex-shrink: 0;
+}
+
+.admin-simple-mission-tab--active {
+  border-color: var(--olive);
+  background: var(--surface-muted);
+}
+
+.admin-simple-mission-tab-name {
+  font-size: 0.8125rem;
+  font-weight: 800;
+  color: var(--olive-900);
+  text-align: left;
+}
+
+.admin-simple-mission-tab-count {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .admin-simple-advanced {

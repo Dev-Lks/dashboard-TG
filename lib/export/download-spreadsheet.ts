@@ -2,6 +2,7 @@ import { toast } from 'sonner';
 import type { TurmaId } from '@/lib/volunteers/turmas';
 import {
   exportFilenameByDate,
+  exportFilenameByMission,
   exportFilenameByTurma,
   exportFilenameByTurmaAndDate,
   exportFilenameFull,
@@ -11,6 +12,7 @@ type DownloadSpreadsheetOptions = {
   date?: string;
   turma?: TurmaId;
   mission?: string;
+  missionName?: string;
 };
 
 function buildUrl(options?: DownloadSpreadsheetOptions): string {
@@ -24,9 +26,10 @@ function buildUrl(options?: DownloadSpreadsheetOptions): string {
 
 function getFilename(options?: DownloadSpreadsheetOptions): string {
   if (options?.date && options?.turma) {
-    return exportFilenameByTurmaAndDate(options.turma, options.date);
+    return exportFilenameByTurmaAndDate(options.turma, options.date, options.missionName);
   }
-  if (options?.date) return exportFilenameByDate(undefined, options.date);
+  if (options?.date) return exportFilenameByDate(options.missionName, options.date);
+  if (options?.mission && options.missionName) return exportFilenameByMission(options.missionName);
   if (options?.turma) return exportFilenameByTurma(options.turma);
   return exportFilenameFull();
 }

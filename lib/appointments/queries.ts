@@ -1,8 +1,10 @@
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { matchesRoleFilter, normalizeRole } from '@/lib/volunteers/roles';
+import { sortByNr, sortByWarName } from '@/lib/volunteers/sort';
 
 export type AppointmentFilters = {
   date?: string;
+  mission?: string;
   status?: string;
   q?: string;
   role?: string;
@@ -79,11 +81,17 @@ export async function getAppointments(filters: AppointmentFilters): Promise<Appo
   }
 
   if (filters.date) {
-    const { data: dateRow } = await supabase
-      .from('donation_dates')
-      .select('id')
-      .eq('date', filters.date)
-      .maybeSingle();
+    let dateQuery = supabase.from('donation_dates').select('id').eq('date', filters.date);
+    if (filters.mission) {
+      const { data: mission } = await supabase
+        .from('missions')
+        .select('id')
+        .eq('slug', filters.mission)
+        .maybeSingle();
+      if (!mission) return [];
+      dateQuery = dateQuery.eq('mission_id', mission.id);
+    }
+    const { data: dateRow } = await dateQuery.maybeSingle();
     if (dateRow) {
       query = query.eq('donation_date_id', dateRow.id);
     } else {
@@ -199,6 +207,10 @@ export type DateRoster = {
   booked: number;
   remaining: number;
   is_full: boolean;
+  mission_id: string;
+  mission_slug: string;
+  mission_name: string;
+  mission_sort_order: number;
   monitors: RosterVolunteer[];
   atiradores: RosterVolunteer[];
 };
@@ -206,15 +218,29 @@ export type DateRoster = {
 export async function getActiveDatesRoster(): Promise<DateRoster[]> {
   const supabase = createServiceRoleClient();
 
-  const { data: occupancy } = await supabase
-    .from('vw_date_occupancy')
-    .select('*')
+  const { data: activeDates } = await supabase
+    .from('donation_dates')
+    .select(`
+      id,
+      date,
+      capacity,
+      is_active,
+      mission_id,
+      missions (name, slug, sort_order)
+    `)
     .eq('is_active', true)
     .order('date', { ascending: true });
 
-  if (!occupancy?.length) return [];
+  if (!activeDates?.length) return [];
 
-  const dateIds = occupancy.map((d) => d.id);
+  const dateIds = activeDates.map((d) => d.id);
+
+  const { data: occupancy } = await supabase
+    .from('vw_date_occupancy')
+    .select('*')
+    .in('id', dateIds);
+
+  const occupancyMap = new Map((occupancy || []).map((d) => [d.id, d]));
 
   const { data: appointments } = await supabase
     .from('appointments')
@@ -265,20 +291,33 @@ export async function getActiveDatesRoster(): Promise<DateRoster[]> {
     else bucket.atiradores.push(entry);
   }
 
-  const sortByWarName = (list: RosterVolunteer[]) =>
-    [...list].sort((a, b) => (a.war_name || a.full_name).localeCompare(b.war_name || b.full_name, 'pt-BR'));
-
-  return occupancy.map((d) => {
+  const rosters = activeDates.map((d) => {
+    const occ = occupancyMap.get(d.id);
+    const mission = d.missions as { name: string; slug: string; sort_order: number } | { name: string; slug: string; sort_order: number }[] | null;
+    const m = Array.isArray(mission) ? mission[0] : mission;
     const bucket = rosterMap.get(d.id) || { monitors: [], atiradores: [] };
     return {
       id: d.id,
       date: d.date,
-      capacity: d.capacity,
-      booked: d.booked,
-      remaining: d.remaining,
-      is_full: d.is_full,
+      capacity: occ?.capacity ?? d.capacity,
+      booked: occ?.booked ?? 0,
+      remaining: occ?.remaining ?? d.capacity,
+      is_full: occ?.is_full ?? false,
+      mission_id: d.mission_id,
+      mission_slug: m?.slug ?? '',
+      mission_name: m?.name ?? '',
+      mission_sort_order: m?.sort_order ?? 999,
       monitors: sortByWarName(bucket.monitors),
-      atiradores: sortByWarName(bucket.atiradores),
+      atiradores: sortByNr(bucket.atiradores),
     };
   });
+
+  rosters.sort((a, b) => {
+    if (a.mission_sort_order !== b.mission_sort_order) {
+      return a.mission_sort_order - b.mission_sort_order;
+    }
+    return a.date.localeCompare(b.date);
+  });
+
+  return rosters;
 }

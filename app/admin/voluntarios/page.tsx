@@ -1,7 +1,6 @@
 import { requireAdmin } from '@/lib/admin-auth';
 import { createServerSupabase } from '@/lib/supabase/server';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
-import { ExportPanel } from '@/components/admin/appointments/ExportPanel';
 import { VolunteersByTurma } from '@/components/admin/volunteers/VolunteersByTurma';
 import { UNIT_ID } from '@/lib/branding';
 
@@ -28,7 +27,7 @@ export default async function AdminVolunteersPage({ searchParams }: { searchPara
     <div>
       <AdminPageHeader
         eyebrow={UNIT_ID}
-        title="Efetivo por turma"
+        title="Turmas"
       />
 
       <div>
@@ -40,10 +39,6 @@ export default async function AdminVolunteersPage({ searchParams }: { searchPara
             <input name="q" defaultValue={params.q} placeholder="Buscar NR / Guerra / Nome" className="input text-sm" />
             <button type="submit" className="btn btn-secondary text-sm">Filtrar</button>
           </form>
-        </div>
-
-        <div className="mb-5">
-          <ExportPanel rosters={[]} showTurma />
         </div>
 
         <VolunteersByTurma volunteers={volunteers} />

@@ -11,11 +11,18 @@ import { CancelAppointmentDialog } from './CancelAppointmentDialog';
 import { ExportPanel } from './ExportPanel';
 import { EmptyState } from '@/components/shared/EmptyState';
 
+type MissionOption = {
+  slug: string;
+  name: string;
+};
+
 type AppointmentsSimplePageProps = {
   rosters: DateRoster[];
+  missions: MissionOption[];
   stats: AppointmentStats;
   appointments: AppointmentRow[];
   availableDates: DateOccupancy[];
+  selectedMission: string | null;
   selectedDate: string | null;
 };
 
@@ -96,7 +103,6 @@ function VolunteerTable({
         </table>
       </div>
 
-      {/* Mobile cards */}
       <div className="admin-simple-cards">
         {volunteers.map((v, i) => {
           const appt = appointmentsById.get(v.id);
@@ -130,9 +136,11 @@ function VolunteerTable({
 
 export function AppointmentsSimplePage({
   rosters,
+  missions,
   stats,
   appointments,
   availableDates,
+  selectedMission,
   selectedDate,
 }: AppointmentsSimplePageProps) {
   const router = useRouter();
@@ -141,7 +149,14 @@ export function AppointmentsSimplePage({
   const [selected, setSelected] = useState<AppointmentRow | null>(null);
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
-  const activeRoster = rosters.find((r) => r.date === selectedDate) || rosters[0];
+
+  const missionRosters = useMemo(
+    () => (selectedMission ? rosters.filter((r) => r.mission_slug === selectedMission) : rosters),
+    [rosters, selectedMission],
+  );
+
+  const activeRoster =
+    missionRosters.find((r) => r.date === selectedDate) || missionRosters[0];
 
   const appointmentsById = useMemo(() => {
     const map = new Map<string, AppointmentRow>();
@@ -158,10 +173,24 @@ export function AppointmentsSimplePage({
     [activeRoster, search]
   );
 
-  const selectDate = (date: string) => {
+  const pushParams = (mission: string, date?: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    params.set('date', date);
+    params.set('mission', mission);
+    if (date) params.set('date', date);
+    else params.delete('date');
     router.push(`/admin/agendamentos?${params.toString()}`);
+  };
+
+  const selectMission = (slug: string) => {
+    const dates = rosters.filter((r) => r.mission_slug === slug);
+    const today = new Date().toISOString().slice(0, 10);
+    const nextDate = dates.find((r) => r.date >= today)?.date || dates[0]?.date;
+    pushParams(slug, nextDate);
+  };
+
+  const selectDate = (date: string) => {
+    if (!selectedMission) return;
+    pushParams(selectedMission, date);
   };
 
   const handleRefresh = () => router.refresh();
@@ -181,9 +210,13 @@ export function AppointmentsSimplePage({
 
   return (
     <div className="admin-simple">
-      <ExportPanel rosters={rosters} />
+      <ExportPanel
+        missions={missions}
+        rosters={rosters}
+        selectedMission={selectedMission}
+        selectedDate={selectedDate}
+      />
 
-      {/* Resumo rápido */}
       <div className="admin-simple-summary">
         <div className="admin-simple-stat">
           <span className="admin-simple-stat-value">{stats.totalConfirmed}</span>
@@ -199,7 +232,6 @@ export function AppointmentsSimplePage({
         </div>
       </div>
 
-      {/* Busca */}
       <div className="admin-simple-search">
         <Search className="admin-simple-search-icon" />
         <input
@@ -211,9 +243,28 @@ export function AppointmentsSimplePage({
         />
       </div>
 
-      {/* Abas de data */}
+      {missions.length > 1 && (
+        <div className="admin-simple-missions">
+          {missions.map((m) => {
+            const isActive = m.slug === selectedMission;
+            const count = rosters.filter((r) => r.mission_slug === m.slug).length;
+            return (
+              <button
+                key={m.slug}
+                type="button"
+                onClick={() => selectMission(m.slug)}
+                className={`admin-simple-mission-tab ${isActive ? 'admin-simple-mission-tab--active' : ''}`}
+              >
+                <span className="admin-simple-mission-tab-name">{m.name}</span>
+                <span className="admin-simple-mission-tab-count">{count} data{count !== 1 ? 's' : ''}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       <div className="admin-simple-dates">
-        {rosters.map((r) => {
+        {missionRosters.map((r) => {
           const shortLabel = formatDayShortLabel(r.date);
           const isActive = r.date === activeRoster?.date;
           const shortDate = formatDateBR(r.date).slice(0, 5);
@@ -232,14 +283,13 @@ export function AppointmentsSimplePage({
         })}
       </div>
 
-      {/* Conteúdo da data selecionada */}
       {activeRoster && (
         <div className="card admin-simple-panel">
           <div className="admin-simple-panel-head">
             <div>
               <h2 className="admin-simple-panel-title">{formatDateBR(activeRoster.date)}</h2>
               <p className="admin-simple-panel-sub">
-                {dayLabel} •{' '}
+                {activeRoster.mission_name} • {dayLabel} •{' '}
                 <strong>{activeRoster.remaining} vagas livres</strong>
                 {activeRoster.is_full && ' • CHEIA'}
               </p>
@@ -264,7 +314,6 @@ export function AppointmentsSimplePage({
         </div>
       )}
 
-      {/* Avançado (escondido) */}
       <details className="admin-simple-advanced">
         <summary>Ver cancelados e outras opções</summary>
         <p className="mt-3 text-base text-[var(--text-muted)]">

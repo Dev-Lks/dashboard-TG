@@ -9,6 +9,7 @@ import {
   type MissionAttendanceRow,
   type MissionAttendanceSummary,
 } from '@/lib/appointments/mission-attendance-utils';
+import { compareByNr } from '@/lib/volunteers/sort';
 
 export type {
   MissionAppointmentRecord,
@@ -115,7 +116,24 @@ export async function getMissionAttendanceRoster(
 
   const roleFilter = filters?.role === undefined ? 'atirador' : filters.role;
   const filtered = applyFilters(data.allRows, { ...filters, role: roleFilter });
-  filtered.sort((a, b) => (a.warName || a.fullName).localeCompare(b.warName || b.fullName, 'pt-BR'));
+
+  if (roleFilter === 'atirador') {
+    filtered.sort((a, b) => compareByNr(a.nr, b.nr));
+  } else if (roleFilter === 'monitor') {
+    filtered.sort((a, b) =>
+      (a.warName || a.fullName).localeCompare(b.warName || b.fullName, 'pt-BR'),
+    );
+  } else {
+    filtered.sort((a, b) => {
+      if (a.role === 'atirador' && b.role === 'atirador') return compareByNr(a.nr, b.nr);
+      if (a.role === 'monitor' && b.role === 'monitor') {
+        return (a.warName || a.fullName).localeCompare(b.warName || b.fullName, 'pt-BR');
+      }
+      if (a.role === 'monitor') return -1;
+      if (b.role === 'monitor') return 1;
+      return compareByNr(a.nr, b.nr);
+    });
+  }
 
   return {
     mission: data.mission,

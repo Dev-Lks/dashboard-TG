@@ -8,8 +8,8 @@ const navItems = [
   { href: '/admin', label: 'Dashboard', icon: BarChart3, exact: true },
   { href: '/admin/missoes', label: 'Missões', icon: Flag },
   { href: '/admin/datas', label: 'Datas', icon: Calendar },
-  { href: '/admin/voluntarios', label: 'Efetivo', icon: Users },
   { href: '/admin/agendamentos', label: 'Agendamentos', icon: ClipboardList },
+  { href: '/admin/voluntarios', label: 'Turmas', icon: Users },
 ];
 
 export function AdminNav() {

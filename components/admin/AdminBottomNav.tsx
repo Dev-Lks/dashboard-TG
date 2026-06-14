@@ -9,6 +9,7 @@ const navItems = [
   { href: '/admin/missoes', label: 'Missões', icon: Flag },
   { href: '/admin/datas', label: 'Datas', icon: Calendar },
   { href: '/admin/agendamentos', label: 'Agenda', icon: ClipboardList },
+  { href: '/admin/voluntarios', label: 'Turmas', icon: Users },
 ];
 
 export function AdminBottomNav() {
@@ -16,7 +17,7 @@ export function AdminBottomNav() {
 
   return (
     <nav
-      className="admin-bottom-nav fixed inset-x-0 bottom-0 z-50 grid grid-cols-4 border-t border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur-sm pb-[env(safe-area-inset-bottom,0px)] md:hidden"
+      className="admin-bottom-nav fixed inset-x-0 bottom-0 z-50 grid grid-cols-5 border-t border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur-sm pb-[env(safe-area-inset-bottom,0px)] md:hidden"
       aria-label="Navegação administrativa"
     >
       {navItems.map((item) => {
