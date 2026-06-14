@@ -105,6 +105,11 @@ export async function updateMissionAction(formData: FormData): Promise<MissionAc
 
       await supabase.from('donation_time_slots').delete().in('donation_date_id', dateIds);
     }
+  } else if (defaultScheduleMode === 'slots') {
+    await supabase
+      .from('donation_dates')
+      .update({ schedule_mode: 'slots' })
+      .eq('mission_id', id);
   }
 
   revalidatePath('/admin/missoes');

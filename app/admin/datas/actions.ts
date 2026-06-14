@@ -211,12 +211,61 @@ export async function updateDateAction(formData: FormData): Promise<DateActionRe
   if (!id) return { success: false, error: 'ID inválido' };
 
   const supabase = createServiceRoleClient();
-  const { error } = await supabase
-    .from('donation_dates')
-    .update({ capacity, notes })
-    .eq('id', id);
 
-  if (error) return { success: false, error: 'Erro ao atualizar data' };
+  const scheduleModeRaw = formData.get('scheduleMode') as string | null;
+  const scheduleMode: ScheduleMode | null = (scheduleModeRaw === 'presence_only' || scheduleModeRaw === 'slots')
+    ? scheduleModeRaw
+    : null;
+
+  if (scheduleMode === 'presence_only') {
+    await supabase.from('donation_time_slots').delete().eq('donation_date_id', id);
+    const { error } = await supabase
+      .from('donation_dates')
+      .update({
+        capacity,
+        notes,
+        schedule_mode: 'presence_only',
+        schedule_start: null,
+        schedule_end: null,
+        slot_interval: null,
+      })
+      .eq('id', id);
+    if (error) return { success: false, error: 'Erro ao atualizar data' };
+  } else if (scheduleMode === 'slots') {
+    const scheduleStart = (formData.get('scheduleStart') as string) || '08:00';
+    const scheduleEnd = (formData.get('scheduleEnd') as string) || '12:00';
+    const slotInterval = parseInt(formData.get('slotInterval') as string) || 30;
+
+    const times = generateTimeSlots(scheduleStart, scheduleEnd, slotInterval);
+    if (times.length === 0) {
+      return { success: false, error: 'Configure um intervalo de horários válido' };
+    }
+
+    await supabase.from('donation_time_slots').delete().eq('donation_date_id', id);
+
+    const { error } = await supabase
+      .from('donation_dates')
+      .update({
+        capacity,
+        notes,
+        schedule_mode: 'slots',
+        schedule_start: scheduleStart,
+        schedule_end: scheduleEnd,
+        slot_interval: slotInterval,
+      })
+      .eq('id', id);
+    if (error) return { success: false, error: 'Erro ao atualizar data' };
+
+    await supabase.from('donation_time_slots').insert(
+      times.map((t) => ({ donation_date_id: id, time: t, is_active: true })),
+    );
+  } else {
+    const { error } = await supabase
+      .from('donation_dates')
+      .update({ capacity, notes })
+      .eq('id', id);
+    if (error) return { success: false, error: 'Erro ao atualizar data' };
+  }
 
   revalidatePath('/admin/datas');
   revalidatePath('/admin');
