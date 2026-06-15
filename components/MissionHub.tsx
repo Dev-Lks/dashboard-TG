@@ -50,7 +50,7 @@ function MissionCard({ mission }: { mission: PublicMissionWithDates }) {
         <div className="flex flex-wrap gap-2 pt-1">
           {hasOpen ? (
             <Link href={`/agendar/${mission.slug}`} className="btn btn-primary">
-              Confirmar presença <ArrowRight className="h-4 w-4" />
+              Escolher missão <ArrowRight className="h-4 w-4" />
             </Link>
           ) : (
             <button type="button" disabled className="btn btn-primary opacity-60">

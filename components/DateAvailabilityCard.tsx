@@ -38,8 +38,9 @@ export function DateAvailabilityCard({ date, selected, onSelect }: Props) {
         <div className="progress-fill" style={{ width: `${percent}%` }} />
       </div>
       {!isClosed && (
-        <div className="mt-2 text-sm font-bold text-[var(--success)]">
-          {date.remaining} vagas disponíveis
+        <div className="mt-3 flex items-center justify-between gap-3 text-sm font-bold">
+          <span className="text-[var(--success)]">{date.remaining} vagas disponíveis</span>
+          <span className="text-[var(--olive)]">Escolher esta data</span>
         </div>
       )}
     </button>
